@@ -1,6 +1,7 @@
 #ifndef TREE_BINARY_TREE_H
 #define TREE_BINARY_TREE_H
 
+#define TREE_BINARY
 #include <tree_struct.h>
 
 TreeNodePtr btNewNode(DataType data);

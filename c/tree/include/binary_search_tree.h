@@ -1,6 +1,7 @@
 #ifndef TREE_BINARY_SEARCH_TREE_H
 #define TREE_BINARY_SEARCH_TREE_H
 
+#define TREE_BINARY
 #include <tree_struct.h>
 
 // 输出 x < y

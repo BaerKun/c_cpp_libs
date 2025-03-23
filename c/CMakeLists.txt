@@ -16,4 +16,4 @@ add_subdirectory(geometry)
 add_subdirectory(test)
 
 # tmp
-add_subdirectory(tmp)
+# add_subdirectory(tmp)

@@ -4,19 +4,33 @@
 
 #define MAX_COUNT_INPUT_SIZE 64
 
+typedef struct {
+    WeightType dp;
+    WeightType sum;
+    int root;
+} DpWeight;
+
+/*
+ * 最优二叉搜索树
+ * minimize(sum(deep[i] * weight[i]))
+ */
 TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const int number, void **buffer) {
     int left, root, right;
     WeightType minTreeWeight;
-    WeightType (*treeWeight)[MAX_COUNT_INPUT_SIZE] = malloc(number * MAX_COUNT_INPUT_SIZE * sizeof(WeightType));
-    int (*treeRoot)[MAX_COUNT_INPUT_SIZE] = malloc(number * MAX_COUNT_INPUT_SIZE * sizeof(TreeNodePtr));
+    DpWeight *dpWeight = malloc(number * (number + 1) / 2 * sizeof(DpWeight));
 
-    for (root = 0; root < number; root++) {
-        treeWeight[root][root] = weight[root];
-        treeRoot[root][root] = root;
+    for (int i = 0; i < number; ++i) {
+        dpWeight[i].dp = weight[i];
+        dpWeight[i].sum = weight[i];
+        dpWeight[i].root = i;
     }
 
-    for (int treeWidth = 1; treeWidth < number; treeWidth++) {
-        for (left = 0; (right = treeWidth + left) < number; left++) {
+    // TODO: 想一种更高效的内存储存方法
+    // treeWeight[right][left] = sum(weight[i]) left <= i <= right
+    for (int width = 1; width < number; width++) {
+        for (left = 0; (right = width + left) < number; left++) {
+            int i = 0;
+
             treeWeight[right][left] = treeWeight[left][left] + treeWeight[right][left + 1];
 
             if (treeWeight[left + 1][right] < treeWeight[left][right - 1]) {
