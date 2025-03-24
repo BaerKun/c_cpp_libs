@@ -1,16 +1,11 @@
-#include "math_func.h"
+#include "OBST.h"
 #include <stdio.h>
 
 int main() {
-    const ComputationNodePtr x = variable(0);
-    MathFunction *func = mfAdd(x, mfDiv(x, constant(2)));
-    MathFunction *deriv = derivative(func);
-
-    mfPrint(func);
-    putchar('\n');
-    mfPrint(deriv);
-
-    mfDelete(func);
-    mfDelete(deriv);
+    int data[] = {1, 2, 3, 4, 5, 6, 7};
+    int weight[] = {1, 2, 3, 4, 5, 6, 7};
+    TreeNodePtr root = optimalBST(data, weight, 7);
+    printf("%d", root->data);
+    treeDestroy(root);
     return 0;
 }

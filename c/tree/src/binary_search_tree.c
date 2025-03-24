@@ -1,7 +1,5 @@
 #include <binary_search_tree.h>
-#include <binary_tree.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 TreeNodePtr *bstFind(TreeNodePtr *const root, const DataType data) {
     TreeNodePtr *parent2child = root;

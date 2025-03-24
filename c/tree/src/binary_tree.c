@@ -1,14 +1,5 @@
 #include <binary_tree.h>
-#include <tree.h>
 #include <stdlib.h>
-
-TreeNodePtr btNewNode(DataType data){
-    return treeNewNode(data);
-}
-
-void btDestroy(TreeNodePtr root){
-    treeDestroy(root);
-}
 
 TreeNodePtr btUnlink(TreeNodePtr *const parent2child, TreeNodePtr (*if2children)(TreeNodePtr *)) {
     const TreeNodePtr node = *parent2child;
@@ -54,6 +45,6 @@ void btInsertNode(TreeNodePtr *const parent2child, const TreeNodePtr node) {
 }
 
 void btInsertData(TreeNodePtr *const parent2child, const DataType data) {
-    const TreeNodePtr node = btNewNode(data);
+    const TreeNodePtr node = treeNewNode(data);
     btInsertNode(parent2child, node);
 }

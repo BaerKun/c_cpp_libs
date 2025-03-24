@@ -437,7 +437,8 @@ static inline ComputationNodePtr pow_(const ComputationNodePtr a, const Computat
 }
 
 ComputationNodePtr mfPow(const ComputationNodePtr a, const ComputationNodePtr b) {
-    switch ((b->type == CONSTANT) << 1 | a->type == CONSTANT) {
+    float value;
+    switch ((b->type == CONSTANT) << 1 | (a->type == CONSTANT)) {
         case 0:
             return pow_(a, b);
         case 1:
@@ -458,7 +459,7 @@ ComputationNodePtr mfPow(const ComputationNodePtr a, const ComputationNodePtr b)
             }
             return pow_(a, b);
         default:
-            const float value = powf(a->value, b->value);
+            value = powf(a->value, b->value);
             deleteAutoConstInter(a);
             deleteAutoConstInter(b);
             return autoConstant(value);

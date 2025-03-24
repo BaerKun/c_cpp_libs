@@ -6,6 +6,6 @@
 typedef int WeightType;
 
 // 输入需要先进行排序
-TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], int number, void **buffer);
+TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], int number);
 
 #endif //TREE_OBST_H

@@ -1,12 +1,7 @@
 #ifndef TREE_BINARY_TREE_H
 #define TREE_BINARY_TREE_H
 
-#define TREE_BINARY
-#include <tree_struct.h>
-
-TreeNodePtr btNewNode(DataType data);
-
-void btDestroy(TreeNodePtr root);
+#include <tree.h>
 
 TreeNodePtr btUnlink(TreeNodePtr *parent2child, TreeNodePtr (*if2children)(TreeNodePtr *));
 

@@ -1,8 +1,7 @@
 #ifndef TREE_BINARY_SEARCH_TREE_H
 #define TREE_BINARY_SEARCH_TREE_H
 
-#define TREE_BINARY
-#include <tree_struct.h>
+#include <binary_tree.h>
 
 // 输出 x < y
 #define GREATER(x, y) (x > y)

@@ -1,98 +1,100 @@
 #include "OBST.h"
-#include "queue.h"
 #include <stdlib.h>
 
-#define MAX_COUNT_INPUT_SIZE 64
+typedef struct {
+    int left, right;
+} LeftRight;
+
+#define QUEUE_ELEMENT_TYPE LeftRight
+#include "queue.h"
 
 typedef struct {
-    WeightType dp;
-    WeightType sum;
-    int root;
-} DpWeight;
+    WeightType sub; // left~right 内的 OBST 的 sum(d*w)
+    WeightType sum; // sum(w[i]) left <= i <= right
+    int root; // left!right 内的 OBST 的 root
+} DPData;
 
 /*
  * 最优二叉搜索树
  * minimize(sum(deep[i] * weight[i]))
  */
-TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const int number, void **buffer) {
+TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const int number) {
     int left, root, right;
-    WeightType minTreeWeight;
-    DpWeight *dpWeight = malloc(number * (number + 1) / 2 * sizeof(DpWeight));
+    DPData **dp = malloc(number * sizeof (void *) + number * (number + 1) / 2 * sizeof(DPData));
+    DPData *dpBuff = (DPData *)(dp + number);
 
-    for (int i = 0; i < number; ++i) {
-        dpWeight[i].dp = weight[i];
-        dpWeight[i].sum = weight[i];
-        dpWeight[i].root = i;
+    /*
+     *          00  01  02 ...
+     *      ->  11  12  13 ...
+     *  ->  -   22  23  24 ...
+     *  -   -   ...
+     */
+    for (int i = 0, j = 0, k = number; i != number; ++i) {
+        dpBuff[j].sub = weight[i];
+        dpBuff[j].sum = weight[i];
+        dpBuff[j].root = i;
+        dp[i] = dpBuff + j - i;
+        j += k--;
     }
 
-    // TODO: 想一种更高效的内存储存方法
-    // treeWeight[right][left] = sum(weight[i]) left <= i <= right
     for (int width = 1; width < number; width++) {
         for (left = 0; (right = width + left) < number; left++) {
-            int i = 0;
+            dp[left][right].sum = weight[left] + dp[left + 1][right].sum;
 
-            treeWeight[right][left] = treeWeight[left][left] + treeWeight[right][left + 1];
-
-            if (treeWeight[left + 1][right] < treeWeight[left][right - 1]) {
-                minTreeWeight = treeWeight[left + 1][right];
-                treeRoot[left][right] = left;
+            WeightType min; // min(left-sub-OBST + right-sub-OBST)
+            if (dp[left + 1][right].sub < dp[left][right - 1].sub) {
+                min = dp[left + 1][right].sub;
+                dp[left][right].root = left;
             } else {
-                minTreeWeight = treeWeight[left][right - 1];
-                treeRoot[left][right] = right;
+                min = dp[left][right - 1].sub;
+                dp[left][right].root = right;
             }
 
-            for (root = left + 1; root < right; root++) {
-                if (treeWeight[left][root - 1] + treeWeight[root + 1][right] < minTreeWeight) {
-                    minTreeWeight = treeWeight[left][root - 1] + treeWeight[root + 1][right];
-                    treeRoot[left][right] = root;
+            for (root = left + 1; root != right; ++root) {
+                if (dp[left][root - 1].sub + dp[root + 1][right].sub < min) {
+                    min = dp[left][root - 1].sub + dp[root + 1][right].sub;
+                    dp[left][right].root = root;
                 }
             }
-
-            treeWeight[left][right] = minTreeWeight + treeWeight[right][left];
+            dp[left][right].sub = min + dp[left][right].sum;
         }
     }
 
-    free(treeWeight);
+    TreeNodePtr *nodes = malloc(number * sizeof(TreeNodePtr));
+    for(int i = 0; i != number; ++i)
+        nodes[i] = malloc(sizeof(TreeNode));
 
-    const QueuePtr pLeftQueue = newQueue(number);
-    const QueuePtr pRightQueue = newQueue(number);
-    const TreeNodePtr _buffer = malloc(number * sizeof(TreeNode));
+    // TODO: 优化队列长度
+    const QueuePtr queue = newQueue(number);
+    enqueue(queue, (LeftRight){0, number - 1});
 
-    enqueue(pLeftQueue, 0);
-    enqueue(pRightQueue, number - 1);
+    const TreeNodePtr tree = nodes[dp[0][number - 1].root];
 
-    const TreeNodePtr tree = _buffer + treeRoot[0][number - 1];
+    while (queue->front != queue->rear) {
+        const LeftRight lr = dequeue(queue);
+        left = lr.left;
+        right = lr.right;
+        root = dp[left][right].root;
+        const TreeNodePtr node = nodes[root];
 
-    while (pLeftQueue->front != pLeftQueue->rear) {
-        left = dequeue(pLeftQueue);
-        right = dequeue(pRightQueue);
-        root = treeRoot[left][right];
-        const TreeNodePtr rootNode = _buffer + root;
+        node->data = data[root];
+        node->next = NULL;
 
-        rootNode->data = data[root];
-        rootNode->next = NULL;
-
-        if (root > left) {
-            enqueue(pLeftQueue, left);
-            enqueue(pRightQueue, root - 1);
-            left = treeRoot[left][root - 1];
-            rootNode->left = _buffer + left;
+        if (root != left) {
+            enqueue(queue, (LeftRight){left, root - 1});
+            node->left = nodes[dp[left][root - 1].root];
         } else
-            rootNode->left = NULL;
+            node->left = NULL;
 
-        if (root < right) {
-            enqueue(pLeftQueue, root + 1);
-            enqueue(pRightQueue, right);
-            right = treeRoot[root + 1][right];
-            rootNode->right = _buffer + right;
+        if (root != right) {
+            enqueue(queue, (LeftRight){root + 1, right});
+            node->right = nodes[dp[root + 1][right].root];
         } else
-            rootNode->right = NULL;
+            node->right = NULL;
     }
 
-    free(treeRoot);
-    queue_destroy(pLeftQueue);
-    queue_destroy(pRightQueue);
-
-    *buffer = _buffer;
+    free(dp);
+    free(nodes);
+    queue_destroy(queue);
     return tree;
 }

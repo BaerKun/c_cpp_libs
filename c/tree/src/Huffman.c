@@ -15,7 +15,7 @@ TreeNodePtr HuffmanCode(const DataType *data, const int *cost, const int number)
     const HeapPtr heap = newHeap(number);
 
     for (int i = 0, j = 1; i < number; i = j++) {
-        const TreeNodePtr node = btNewNode(data[i]);
+        const TreeNodePtr node = treeNewNode(data[i]);
         heap->prev[j] = (HeapElement) {node, cost[i]};
     }
     buildHeap(heap, number);
@@ -23,7 +23,7 @@ TreeNodePtr HuffmanCode(const DataType *data, const int *cost, const int number)
     TreeNodePtr root;
     while (heap->size > 1) {
         const HeapElement minCost = heapDeleteMin(heap);
-        root = btNewNode(NO_DATA);
+        root = treeNewNode(NO_DATA);
 
         root->left = minCost.node;
         root->right = heapDeleteMin(heap).node;

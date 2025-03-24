@@ -1,7 +1,24 @@
 #ifndef TREE_H
 #define TREE_H
 
-#include <tree_struct.h>
+#ifndef TREE_DATA_TYPE
+#define TREE_DATA_TYPE int
+#endif
+
+typedef TREE_DATA_TYPE DataType;
+typedef struct TreeNode_ TreeNode, *TreeNodePtr;
+struct TreeNode_ {
+    TreeNodePtr next;
+#ifndef TREE_BINARY
+    TreeNodePtr firstChild;
+#else
+    TreeNodePtr left, right;
+#ifdef TREE_AVL
+    int height, deleted;
+#endif
+#endif
+    DataType data;
+};
 
 TreeNodePtr treeNewNode(DataType data);
 
