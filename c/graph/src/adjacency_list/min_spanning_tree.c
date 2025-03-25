@@ -1,7 +1,7 @@
 #include "adjacency_list/min_spanning_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define HEAP_ELEMENT_TYPE int *
+#define HEAP_DATA_TYPE int *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 

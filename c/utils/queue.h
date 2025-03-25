@@ -3,49 +3,47 @@
 
 #include <stdlib.h>
 
-#ifndef QUEUE_ELEMENT_TYPE
-#define QUEUE_ELEMENT_TYPE int
+#ifndef QUEUE_DATA_TYPE
+#define QUEUE_DATA_TYPE int
 #endif
 
 typedef struct Queue_ Queue, *QueuePtr;
 
 struct Queue_ {
-    int capacity;
+    QUEUE_DATA_TYPE *data;
     int front;
     int rear;
     int size;
-    QUEUE_ELEMENT_TYPE *elements;
+    int capacity;
 };
 
-static inline QueuePtr newQueue(const int capacity){
-    const QueuePtr queue = malloc(sizeof(Queue));
-    *queue = (Queue){capacity, 0, 0, 0, malloc(capacity * sizeof(QUEUE_ELEMENT_TYPE))};
-    return queue;
+static inline void queueInit(const QueuePtr queue, const int capacity){
+    queue->data = (QUEUE_DATA_TYPE *)malloc(sizeof(QUEUE_DATA_TYPE) * capacity);
+    queue->front = queue->rear = queue->size = 0;
+    queue->capacity = capacity;
 }
 
-static inline void enqueue(const QueuePtr queue, QUEUE_ELEMENT_TYPE const element){
-    queue->elements[queue->rear] = element;
+static inline void enqueue(const QueuePtr queue, QUEUE_DATA_TYPE const element){
+    queue->data[queue->rear] = element;
     if(++queue->rear == queue->capacity)
         queue->rear = 0;
     queue->size++;
 }
 
-static inline QUEUE_ELEMENT_TYPE dequeue(const QueuePtr queue){
-    const QUEUE_ELEMENT_TYPE front = queue->elements[queue->front];
+static inline QUEUE_DATA_TYPE dequeue(const QueuePtr queue){
+    QUEUE_DATA_TYPE const front = queue->data[queue->front];
     if(++queue->front == queue->capacity)
         queue->front = 0;
     queue->size--;
-
     return front;
 }
 
-static inline void queue_makeEmpty(const QueuePtr queue){
+static inline void queueClear(const QueuePtr queue){
     queue->front = queue->rear = queue->size = 0;
 }
 
-static inline void queue_destroy(const QueuePtr queue){
-    free(queue->elements);
-    free(queue);
+static inline void queueFreeData(const QueuePtr queue){
+    free(queue->data);
 }
 
 #endif //QUEUE_H

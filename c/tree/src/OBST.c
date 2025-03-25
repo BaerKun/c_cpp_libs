@@ -1,11 +1,11 @@
-#include "OBST.h"
+#include <tree_alg.h>
 #include <stdlib.h>
 
 typedef struct {
     int left, right;
 } LeftRight;
 
-#define QUEUE_ELEMENT_TYPE LeftRight
+#define QUEUE_DATA_TYPE LeftRight
 #include "queue.h"
 
 typedef struct {
@@ -18,6 +18,8 @@ typedef struct {
  * 最优二叉搜索树
  * minimize(sum(deep[i] * weight[i]))
  */
+
+// 输入data应该升序排列，以满足搜索二叉树的性质
 TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const int number) {
     int left, root, right;
     DPData **dp = malloc(number * sizeof (void *) + number * (number + 1) / 2 * sizeof(DPData));
@@ -56,7 +58,7 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
                     dp[left][right].root = root;
                 }
             }
-            dp[left][right].sub = min + dp[left][right].sum;
+            dp[left][right].sub = min + dp[left][right].sum; // 递推公式
         }
     }
 
@@ -64,14 +66,15 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
     for(int i = 0; i != number; ++i)
         nodes[i] = malloc(sizeof(TreeNode));
 
-    // TODO: 优化队列长度
-    const QueuePtr queue = newQueue(number);
-    enqueue(queue, (LeftRight){0, number - 1});
+    // N个节点的二叉树最多有(N+1)/2个树叶
+    Queue queue;
+    queueInit(&queue, (number + 1) / 2);
+    enqueue(&queue, (LeftRight){0, number - 1});
 
     const TreeNodePtr tree = nodes[dp[0][number - 1].root];
 
-    while (queue->front != queue->rear) {
-        const LeftRight lr = dequeue(queue);
+    while (queue.size) {
+        const LeftRight lr = dequeue(&queue);
         left = lr.left;
         right = lr.right;
         root = dp[left][right].root;
@@ -81,13 +84,13 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
         node->next = NULL;
 
         if (root != left) {
-            enqueue(queue, (LeftRight){left, root - 1});
+            enqueue(&queue, (LeftRight){left, root - 1});
             node->left = nodes[dp[left][root - 1].root];
         } else
             node->left = NULL;
 
         if (root != right) {
-            enqueue(queue, (LeftRight){root + 1, right});
+            enqueue(&queue, (LeftRight){root + 1, right});
             node->right = nodes[dp[root + 1][right].root];
         } else
             node->right = NULL;
@@ -95,6 +98,6 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
 
     free(dp);
     free(nodes);
-    queue_destroy(queue);
+    queueFreeData(&queue);
     return tree;
 }

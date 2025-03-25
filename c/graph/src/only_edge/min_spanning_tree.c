@@ -1,7 +1,7 @@
 #include "only_edge/min_spanning_tree.h"
 #include "disjSet.h"
 
-#define HEAP_ELEMENT_TYPE EdgePtr
+#define HEAP_DATA_TYPE EdgePtr
 #define HEAP_LESS_THAN(a, b) ((a)->data.weight < (b)->data.weight)
 #include "heap.h"
 

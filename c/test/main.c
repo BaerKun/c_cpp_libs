@@ -1,5 +1,6 @@
-#include "OBST.h"
+#include <tree_alg.h>
 #include <stdio.h>
+#include <link_like.h>
 
 int main() {
     int data[] = {1, 2, 3, 4, 5, 6, 7};
