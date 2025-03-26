@@ -14,16 +14,16 @@ struct LinkNode_ {
     LINK_NODE_DATA_TYPE data;
 };
 
-static inline LinkNodePtr newNode(LINK_NODE_DATA_TYPE const element) {
+static inline LinkNodePtr newNode(LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = malloc(sizeof(LinkNode));
-    node->data = element;
+    node->data = data;
     node->next = NULL;
     return node;
 }
 
-static inline void nodeInsert(LinkNodePtr *prevNextPtr, LINK_NODE_DATA_TYPE const element) {
+static inline void nodeInsert(LinkNodePtr *prevNextPtr, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = malloc(sizeof(LinkNode));
-    node->data = element;
+    node->data = data;
     node->next = *prevNextPtr;
     *prevNextPtr = node;
 }
@@ -34,15 +34,15 @@ static inline LinkNodePtr nodeUnlink(LinkNodePtr *prevNextPtr) {
     return node;
 }
 
-static LinkNode **nodeFind(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const element) {
+static LinkNode **nodeFind(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const data) {
     LinkNodePtr *prev = headNextPtr;
-    for (LinkNodePtr node = *prev; node && node->data != element; prev = &node->next, node = *prev) {
+    for (LinkNodePtr node = *prev; node && node->data != data; prev = &node->next, node = *prev) {
     }
     return prev;
 }
 
-static LinkNodePtr NodeUnlinkWithData(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const element) {
-    LinkNodePtr *prev = nodeFind(headNextPtr, element);
+static LinkNodePtr NodeUnlinkWithData(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const data) {
+    LinkNodePtr *prev = nodeFind(headNextPtr, data);
     return *prev ? nodeUnlink(prev) : NULL;
 }
 

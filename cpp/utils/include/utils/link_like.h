@@ -1,18 +1,18 @@
-#ifndef LINK_LIST_H
-#define LINK_LIST_H
+#ifndef LINK_LIKE_H
+#define LINK_LIKE_H
 
 #include <stdexcept>
 #include "link_node.h"
 
 namespace cpp_libs {
     template<typename DataType_>
-    class LinkList {
+    class LinkLike {
     public:
-        LinkList() {
+        LinkLike() {
             tail_ = &head_;
         }
 
-        ~LinkList() {
+        ~LinkLike() {
             Node::clear(&head_);
         }
 
@@ -38,19 +38,24 @@ namespace cpp_libs {
                 tail_ = &head_;
         }
 
-        DataType_ &front() {
+        DataType_ &top() {
             if (head_ == nullptr)
                 throw std::runtime_error("empty list");
             return head_->data;
         }
 
         void enqueue(const DataType_ &data) {
-            Node::insert(tail_, data);
-            tail_ = &(*tail_)->next;
+            Node *const node = new Node(data);
+            *tail_ = node;
+            tail_ = &node->next;
         }
 
         void dequeue() {
             pop();
+        }
+
+        DataType_ &front() {
+            return top();
         }
 
         void clear() {
@@ -65,4 +70,4 @@ namespace cpp_libs {
     };
 }
 
-#endif //LINK_LIST_H
+#endif //LINK_LIKE_H

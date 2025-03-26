@@ -11,6 +11,6 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], int num
 
 TreeNodePtr HuffmanCode(const DataType data[], const WeightType weight[], int number);
 
-
+void treePrint(TreeNodePtr root, int height);
 
 #endif //TREE_ALG_H

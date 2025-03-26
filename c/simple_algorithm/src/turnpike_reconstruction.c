@@ -1,7 +1,7 @@
 #include "turnpike_reconstruction.h"
 #include "binary_search_tree.h"
 #include <stdio.h>
-#define STACK_ELEMENT_TYPE TreeNodePtr
+#define STACK_DATA_TYPE TreeNodePtr
 #include "stack.h"
 
 typedef struct {

@@ -7,58 +7,55 @@ typedef struct LinkLike_ LinkLike;
 
 struct LinkLike_ {
     LinkNodePtr head;
-    LinkNodePtr tail;
+    LinkNodePtr *tail;
 };
 
 static inline void linkLikeInit(LinkLike *link) {
-    link->head = link->tail = NULL;
+    link->head = NULL;
+    link->tail = &link->head;
 }
 
-static void listClear(LinkLike *link) {
+static inline void linkClear(LinkLike *link) {
     nodeClear(&link->head);
-    link->tail = NULL;
+    link->tail = &link->head;
 }
 
-static void listPush(LinkLike * link, LINK_NODE_DATA_TYPE const data) {
+static inline void linkPush(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
     nodeInsert(&link->head, data);
-    if (link->tail == NULL)
-        link->tail = link->head;
+    if (link->tail == &link->head)
+        link->tail = &link->head->next;
 }
 
-static LINK_NODE_DATA_TYPE listPop(LinkLike * link) {
+static inline void linkPop(LinkLike *link) {
+    nodeDelete(&link->head);
     if (link->head == NULL)
-        return (LINK_NODE_DATA_TYPE){0};
-
-    const LinkNodePtr node = nodeUnlink(&link->head);
-    LINK_NODE_DATA_TYPE const data = node->data;
-    free(node);
-    if (link->head == NULL)
-        link->tail = NULL;
-    return data;
+        link->tail = &link->head;
 }
 
-static void listDelete(LinkLike * link, LINK_NODE_DATA_TYPE const data) {
+static inline LINK_NODE_DATA_TYPE linkTop(const LinkLike *link) {
+    return link->head->data;
+}
+
+static void linkFilter(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = NodeUnlinkWithData(&link->head, data);
     if (node == NULL)
         return;
 
     free(node);
     if (link->head == NULL)
-        link->tail = NULL;
+        link->tail = &link->head;
 }
 
-static inline void listEnqueue(LinkLike * link, LINK_NODE_DATA_TYPE const data) {
-    nodeInsert(&link->tail, data);
-    if (link->tail == NULL)
-        link->head = NULL;
+static inline void linkEnqueue(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
+    const LinkNodePtr node = newNode(data);
+    *link->tail = node;
+    link->tail = &node->next;
 }
 
-static inline LINK_NODE_DATA_TYPE listDequeue(LinkLike * link) {
-    return listPop(link);
-}
-
-static inline void listDestroy(LinkLike * link) {
-    nodeClear(&link->head);
+static inline LINK_NODE_DATA_TYPE linkDequeue(LinkLike *link) {
+    LINK_NODE_DATA_TYPE const data = linkTop(link);
+    linkPop(link);
+    return data;
 }
 
 #endif //LINK_LIKE_H

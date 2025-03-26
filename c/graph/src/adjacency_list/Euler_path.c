@@ -7,7 +7,7 @@ typedef struct {
     VertexId source;
 } Argument;
 
-#define STACK_ELEMENT_TYPE Argument
+#define STACK_DATA_TYPE Argument
 #include "stack.h"
 
 typedef struct {

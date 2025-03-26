@@ -7,7 +7,7 @@ typedef struct VertexArg {
     EdgePtr *outEdge;
 } VertexArg;
 
-#define STACK_ELEMENT_TYPE VertexArg *
+#define STACK_DATA_TYPE VertexArg *
 #include <stack.h>
 
 typedef struct {

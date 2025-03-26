@@ -2,45 +2,39 @@
 #define STACK_H
 
 #include <stdlib.h>
-#include <stdio.h>
 
-#ifndef STACK_ELEMENT_TYPE
-#define STACK_ELEMENT_TYPE int
+#ifndef STACK_DATA_TYPE
+#define STACK_DATA_TYPE int
 #endif
 
 typedef struct Stack_ Stack, *StackPtr;
 
-struct Stack_{
-    STACK_ELEMENT_TYPE *elements;
-    int capacity;
+struct Stack_ {
+    STACK_DATA_TYPE *data;
     int top;
+    int capacity;
 };
 
-static inline StackPtr newStack(const int capacity){
-    const StackPtr stack = (StackPtr)malloc(sizeof(Stack));
-
-    stack->capacity = capacity;
+static inline void stackInit(const StackPtr stack, const int capacity) {
+    stack->data = (STACK_DATA_TYPE *) malloc(sizeof(STACK_DATA_TYPE) * capacity);
     stack->top = 0;
-    stack->elements = (STACK_ELEMENT_TYPE *)malloc(sizeof(STACK_ELEMENT_TYPE) * capacity);
-
-    return stack;
+    stack->capacity = capacity;
 }
 
-static inline void stackPush(const StackPtr stack, STACK_ELEMENT_TYPE const element){
-    stack->elements[stack->top++] = element;
+static inline void stackPush(const StackPtr stack, STACK_DATA_TYPE const element) {
+    stack->data[stack->top++] = element;
 }
 
-static inline STACK_ELEMENT_TYPE stackPop(const StackPtr stack){
-    return stack->elements[--stack->top];
+static inline void stackPop(const StackPtr stack) {
+    --stack->top;
 }
 
-static inline STACK_ELEMENT_TYPE stackPeek(const StackPtr stack){
-    return stack->elements[stack->top - 1];
+static inline STACK_DATA_TYPE stackTop(const StackPtr stack) {
+    return stack->data[stack->top - 1];
 }
 
-static inline void stackDestroy(const StackPtr stack){
-    free(stack->elements);
-    free(stack);
+static inline void stackFreeData(const StackPtr stack) {
+    free(stack->data);
 }
 
 #endif //STACK_H
