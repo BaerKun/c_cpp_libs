@@ -14,12 +14,4 @@ static inline EdgePtr edgeUnlink(EdgePtr *const prevNextPtr) {
     return edge;
 }
 
-void edgeInsertWithData(EdgePtr *prevNextPtr, VertexId target, EdgeData data);
-
-EdgePtr edgeUnlinkWithTarget(EdgePtr *prevNextPtr, VertexId target);
-
-EdgePtr *edgeFind(EdgePtr *prevNextPtr, VertexId target);
-
-void edgeClear(EdgePtr *prevNextPtr);
-
 #endif //EDGE_LIST_H

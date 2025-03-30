@@ -2,10 +2,12 @@
 #define GRAPH_EULER_PATH_H
 
 #include "graph.h"
-#include "node.h"
 
-void EulerCircuit(GraphPtr graph, NodePtr path, VertexId source);
+#define LINK_NODE_DATA_TYPE VertexId
+#include "link_node.h"
 
-void EulerPath(GraphPtr graph, NodePtr path, VertexId src, VertexId dst);
+void EulerCircuit(GraphPtr graph, LinkNodePtr path, VertexId source);
+
+void EulerPath(GraphPtr graph, LinkNodePtr path, VertexId src, VertexId dst);
 
 #endif //GRAPH_EULER_PATH_H

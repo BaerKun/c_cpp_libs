@@ -8,15 +8,8 @@ void treePrint(const TreeNodePtr root, const int height) {
     stack[0] = root;
     int size = 1;
 
-    // TODO: 优化fuck
-    int fuck = 1;
     do {
-        for(int i = fuck; i != size; ++i) {
-            putchar('\t');
-        }
-        fuck = 0;
-
-        for(TreeNodePtr node = stack[--size]; node; node = node->left) {
+        for (TreeNodePtr node = stack[--size]; node; node = node->left) {
             printf("%d\t", node->data);
             stack[size++] = node;
         }
@@ -24,12 +17,15 @@ void treePrint(const TreeNodePtr root, const int height) {
 
         do {
             TreeNodePtr node = stack[size - 1];
-            if(node->right != NULL) {
+            if (node->right != NULL) {
                 stack[size - 1] = node->right;
                 break;
             }
-        }while (--size);
-    }while (size);
+        } while (--size);
+
+        for (int i = 0; i != size; ++i)
+            putchar('\t');
+    } while (size);
 
     free(stack);
 }

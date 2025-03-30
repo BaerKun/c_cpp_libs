@@ -10,7 +10,8 @@
 void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent, const VertexId source, const VertexId target) {
     char *hasKnown = malloc(graph->vertexNum);
     int *distance = malloc(graph->vertexNum * sizeof(int));
-    const HeapPtr heap = newHeap(graph->vertexNum);
+    Heap heap;
+    heapInit(&heap, graph->vertexNum);
 
     for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
         hasKnown[vertex] = 0;
@@ -18,10 +19,11 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent, const VertexId
     }
 
     distance[source] = 0;
-    heapInsert(heap, distance + source);
+    heapPush(&heap, distance + source);
 
-    while (heap->size) {
-        const VertexId vertex = (VertexId) (heapDeleteMin(heap) - distance);
+    while (heap.size) {
+        const VertexId vertex = (VertexId) (heapTop(&heap) - distance);
+        heapPop(&heap);
         if (vertex == target)
             return;
 
@@ -34,32 +36,33 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent, const VertexId
 
             distance[adjacentVertex] = distance[vertex] + edge->data.WEIGHT_FOR_WEIGHTED_PATH;
             parent[adjacentVertex] = vertex;
-            heapInsert(heap, distance + adjacentVertex);
+            heapPush(&heap, distance + adjacentVertex);
         }
     }
 
     free(hasKnown);
     free(distance);
-    heapDestroy(heap);
+    heapFreeData(&heap);
 }
 
 // 无负值圈
 void weightedPath(const GraphPtr graph, VertexId *parent, const VertexId source) {
     char *isInQueue = malloc(graph->vertexNum);
     int *distance = malloc(graph->vertexNum * sizeof(int));
-    const QueuePtr queue = newQueue(graph->vertexNum);
+    Queue queue;
+    queueInit(&queue, graph->vertexNum);
 
     for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
         isInQueue[vertex] = 0;
         distance[vertex] = WIGHT_MAX;
     }
 
-    enqueue(queue, source);
+    enqueue(&queue, source);
     distance[source] = 0;
     isInQueue[source] = 1;
 
-    while (queue->front != queue->rear) {
-        const VertexId vertex = dequeue(queue);
+    while (queue.size) {
+        const VertexId vertex = dequeue(&queue);
         isInQueue[vertex] = 0;
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
@@ -72,7 +75,7 @@ void weightedPath(const GraphPtr graph, VertexId *parent, const VertexId source)
             parent[adjacentVertex] = vertex;
 
             if (!isInQueue[adjacentVertex]) {
-                enqueue(queue, adjacentVertex);
+                enqueue(&queue, adjacentVertex);
                 isInQueue[adjacentVertex] = 1;
             }
         }
@@ -80,7 +83,7 @@ void weightedPath(const GraphPtr graph, VertexId *parent, const VertexId source)
 
     free(isInQueue);
     free(distance);
-    queue_destroy(queue);
+    queueFreeData(&queue);
 }
 
 #endif

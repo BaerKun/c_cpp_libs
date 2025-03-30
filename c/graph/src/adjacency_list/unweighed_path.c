@@ -3,14 +3,15 @@
 
 void buildUnweightedPath(const GraphPtr graph, VertexId *parent, const VertexId source, const VertexId target) {
     VertexId vertex;
-    const QueuePtr queue = newQueue(graph->vertexNum);
+    Queue queue;
+    queueInit(&queue, graph->vertexNum);
 
     for(vertex = 0; vertex < graph->vertexNum; vertex++)
         parent[vertex] = -1;
 
-    enqueue(queue, source);
-    while (queue->front != queue->rear) {
-        vertex = dequeue(queue);
+    enqueue(&queue, source);
+    while (queue.size) {
+        vertex = dequeue(&queue);
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
             const VertexId adjacentVertex = edge->target;
@@ -20,10 +21,9 @@ void buildUnweightedPath(const GraphPtr graph, VertexId *parent, const VertexId 
                 if (adjacentVertex == target)
                     return;
 
-                enqueue(queue, adjacentVertex);
+                enqueue(&queue, adjacentVertex);
             }
         }
     }
-
-    queue_destroy(queue);
+    queueFreeData(&queue);
 }

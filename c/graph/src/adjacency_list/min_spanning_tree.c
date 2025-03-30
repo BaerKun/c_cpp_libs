@@ -20,7 +20,8 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId
     VertexId vertex;
     char *hasKnown = malloc(graph->vertexNum);
     int *minWeight = malloc(graph->vertexNum * sizeof(int));
-    const HeapPtr heap = newHeap(graph->vertexNum);
+    Heap heap;
+    heapInit(&heap, graph->vertexNum);
     parent[root] = root;
 
     for (vertex = 0; vertex < graph->vertexNum; vertex++) {
@@ -28,10 +29,11 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId
         minWeight[vertex] = WIGHT_MAX;
     }
 
-    heapInsert(heap, minWeight + root);
+    heapPush(&heap, minWeight + root);
 
-    while (heap->size) {
-        vertex = (VertexId) (heapDeleteMin(heap) - minWeight);
+    while (heap.size) {
+        vertex = (VertexId) (heapTop(&heap) - minWeight);
+        heapPop(&heap);
         hasKnown[vertex] = 1;
 
         for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {
@@ -40,14 +42,14 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId
             if (!hasKnown[adjacentVertex] && minWeight[adjacentVertex] > thisEdge->data.weight) {
                 minWeight[adjacentVertex] = thisEdge->data.weight;
                 parent[adjacentVertex] = vertex;
-                heapInsert(heap, minWeight + adjacentVertex);
+                heapPush(&heap, minWeight + adjacentVertex);
             }
         }
     }
 
     free(hasKnown);
     free(minWeight);
-    heapDestroy(heap);
+    heapFreeData(&heap);
 }
 
 void printTree(const GraphPtr graph, VertexId parent[], const VertexId root) {

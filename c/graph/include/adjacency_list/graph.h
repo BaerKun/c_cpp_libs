@@ -1,7 +1,7 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge.h"
+#include "share/vertex_edge_data.h"
 
 typedef int VertexId;
 typedef struct Vertex_ Vertex, *VertexPtr;
@@ -9,31 +9,40 @@ typedef struct Edge_ Edge, *EdgePtr;
 typedef struct Graph_ Graph, *GraphPtr;
 
 struct Vertex_ {
-    VertexData data;
-    int indegree;
-    VertexId path;
     EdgePtr outEdges;
+    VertexId path;
+    int indegree;
+    VertexData data;
 };
 
 struct Edge_ {
     EdgePtr next;
     VertexId target;
+    int enable; // 用于懒惰删除
+    EdgePtr reverse;
     EdgeData data;
 };
 
 struct Graph_ {
-    int capacity;
+    Vertex *vertices;
     int vertexNum;
     int edgeNum;
-    VertexPtr vertices;
+    int capacity;
 };
 
-GraphPtr newGraph(int capacity, int vertexNum);
+void graphInit(GraphPtr graph, int capacity);
 
 void graphDestroy(GraphPtr graph);
 
-void graphAddEdge(GraphPtr graph, VertexId source, VertexId target, EdgeData data);
+static inline void graphAddVertex(const GraphPtr graph, const VertexData data) {
+    graph->vertices[graph->vertexNum++] = (Vertex) {
+            .outEdges = 0,
+            .path = 0,
+            .indegree = 0,
+            .data = data
+    };
+}
 
-int graphHasPath(const VertexId parent[], int vertexNum, VertexId source, VertexId target);
+void graphAddEdge(GraphPtr graph, VertexId source, VertexId target, EdgeData data, int undirected);
 
 #endif //GRAPH_GRAPH_H

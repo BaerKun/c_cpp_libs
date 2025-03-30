@@ -1,57 +1,50 @@
 #include "adjacency_list/graph.h"
+#include "adjacency_list/edge.h"
 #include <stdlib.h>
-#include <stdio.h>
-#include "adjacency_list/edge_list.h"
 
-GraphPtr newGraph(const int capacity, const int vertexNum) {
-    const GraphPtr graph = malloc(sizeof(Graph));
-    graph->capacity = capacity;
-    graph->vertexNum = vertexNum;
-    graph->edgeNum = 0;
+void graphInit(const GraphPtr graph, const int capacity) {
     graph->vertices = malloc(capacity * sizeof(Vertex));
-
-    for(VertexPtr vertex = graph->vertices, end = vertex + graph->vertexNum; vertex != end; ++vertex) {
-        vertex->data = NO_VERTEX_DATA;
-        vertex->indegree = 0;
-        vertex->path = -1;
-        vertex->outEdges = NULL;
-    }
-
-    return graph;
+    graph->capacity = capacity;
+    graph->vertexNum = 0;
+    graph->edgeNum = 0;
 }
 
 void graphDestroy(const GraphPtr graph) {
-    VertexPtr vertex, end;
-
-    for (vertex = graph->vertices, end = vertex + graph->vertexNum; vertex != end; vertex++)
-        edgeClear(&vertex->outEdges);
-
+    for (VertexPtr vertex = graph->vertices, end = vertex + graph->vertexNum; vertex != end; vertex++) {
+        for (EdgePtr edge = vertex->outEdges, next; edge; edge = next) {
+            next = edge->next;
+            free(edge);
+        }
+    }
     free(graph->vertices);
-    free(graph);
 }
 
-void graphAddEdge(const GraphPtr graph, const VertexId source, const VertexId target, const EdgeData data) {
-    if (source < 0 || target < 0 || source >= graph->vertexNum || target >= graph->vertexNum) {
-        fputs("graphAddEdge:InvalidVertex\n", stderr);
-        return;
+void graphAddEdge(const GraphPtr graph, const VertexId source, const VertexId target,
+                  const EdgeData data, const int undirected) {
+    const VertexPtr sourceVertex = graph->vertices + source;
+    const VertexPtr targetVertex = graph->vertices + target;
+
+    const EdgePtr edge = malloc(sizeof(Edge));
+    edge->next = NULL;
+    edge->target = target;
+    edge->enable = 1;
+    edge->data = data;
+
+    if(!undirected){
+        edge->reverse = NULL;
+    } else {
+        const EdgePtr reverseEdge = malloc(sizeof(Edge));
+        reverseEdge->next = NULL;
+        reverseEdge->target = source;
+        reverseEdge->enable = 1;
+        reverseEdge->reverse = edge;
+        reverseEdge->data = data;
+
+        edge->reverse = reverseEdge;
+
+        edgeInsert(&targetVertex->outEdges, reverseEdge);
+        ++sourceVertex->indegree;
     }
-    if (*edgeFind(&graph->vertices[source].outEdges, target) != NULL)
-        return;
-
-    edgeInsertWithData(&graph->vertices[source].outEdges, target, data);
-    graph->vertices[target].indegree++;
-    graph->edgeNum++;
-}
-
-int graphHasPath(const VertexId parent[], const int vertexNum, const VertexId source, VertexId target) {
-    if(source < 0 || source >= vertexNum)
-        return 0;
-
-    while(source != target){
-        if(target < 0 || target >= vertexNum)
-            return 0;
-        target = parent[target];
-    }
-
-    return 1;
+    edgeInsert(&sourceVertex->outEdges, edge);
+    ++targetVertex->indegree;
 }

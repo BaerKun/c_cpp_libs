@@ -1,5 +1,5 @@
 #include "adjacency_list/find_scc.h"
-#include "adjacency_list/edge_list.h"
+#include "adjacency_list/edge.h"
 
 typedef struct VertexArg {
     char visitedOnce;
@@ -56,8 +56,9 @@ static void findSccBackward(Package *package, VertexArg *vertex) {
 
 void graphFindScc(const GraphPtr graph, int number[]) {
     VertexArg *vertices = malloc(graph->vertexNum * sizeof(VertexArg));
-    const StackPtr stack = newStack(graph->vertexNum);
-    Package package = {vertices, stack, 0};
+    Stack stack;
+    stackInit(&stack, graph->vertexNum);
+    Package package = {vertices, &stack, 0};
 
     for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
         vertices[vertex].visitedOnce = 0;
@@ -74,12 +75,14 @@ void graphFindScc(const GraphPtr graph, int number[]) {
     }
 
     // 逆序
-    while (stack->top != 0) {
-        VertexArg *vertex = stackPop(stack);
+    while (stack.top != 0) {
+        VertexArg *vertex = stackTop(&stack);
+        stackPop(&stack);
         if (vertex->visitedOnce == 1)
             findSccBackward(&package, vertex);
         ++package.counter;
     }
 
     free(vertices);
+    stackFreeData(&stack);
 }

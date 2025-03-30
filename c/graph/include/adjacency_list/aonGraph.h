@@ -4,13 +4,12 @@
 typedef int TimeType;
 typedef int NodeId;
 
-#define VERTEX_DATA
-struct VertexData {
-    TimeType duration;
-    TimeType earlyStart;
-    TimeType lateStart;
-    TimeType slack;
-};
+#define VERTEX_DATA_TYPE struct {\
+    TimeType duration;\
+    TimeType earlyStart;\
+    TimeType lateStart;\
+    TimeType slack;\
+}
 
 #include "graph.h"
 

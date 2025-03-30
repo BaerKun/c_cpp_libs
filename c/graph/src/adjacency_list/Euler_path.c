@@ -1,48 +1,53 @@
 #include "adjacency_list/Euler_path.h"
 #include <stdio.h>
-#include "adjacency_list/edge_list.h"
 
 typedef struct {
-    NodePtr path;
+    LinkNodePtr path;
     VertexId source;
 } Argument;
 
 #define STACK_DATA_TYPE Argument
+
 #include "stack.h"
 
 typedef struct {
-    EdgePtr **availableEdges;
+    EdgePtr *availableEdges;
     VertexId tmpdst;
 } Package;
 
 // availableEdges[v] 顶点v的可用边链表，充当递归时的“全局变量”
-static EdgePtr **getAvailableEdges(const GraphPtr graph) {
-    EdgePtr **availableEdges = malloc(graph->vertexNum * sizeof(EdgePtr *));
+static EdgePtr *getAvailableEdges(const GraphPtr graph) {
+    EdgePtr *availableEdges = malloc(graph->vertexNum * sizeof(void *));
 
     for (VertexId v = 0; v < graph->vertexNum; v++)
-        availableEdges[v] = &graph->vertices[v].outEdges;
+        availableEdges[v] = graph->vertices[v].outEdges;
 
     return availableEdges;
 }
 
-static EdgePtr getEdge(EdgePtr *availableEdges[], const VertexId source) {
-    const EdgePtr edge = *availableEdges[source];
-    if (edge == NULL)
+static EdgePtr getEdge(EdgePtr *availableEdge) {
+    EdgePtr edge;
+    for (edge = *availableEdge; edge && !edge->enable; edge = edge->next) {
+        // 使用完重置
+        edge->enable = 1;
+    }
+    if (edge == NULL) {
+        *availableEdge = NULL;
         return NULL;
+    }
 
-    availableEdges[source] = &edge->next;
-    const VertexId target = edge->target;
+    *availableEdge = edge->next;
 
-    // “删除”反向（target->source）边（如有，则移至availableEdge前一个节点）
-    const EdgePtr reverseEdges = edgeUnlinkWithTarget(availableEdges[target], source);
-    edgeInsert(availableEdges[target], reverseEdges);
-    availableEdges[target] = &reverseEdges->next;
+    // “删除”反向（target->source）边
+    if (edge->reverse != NULL) {
+        edge->reverse->enable = 0;
+    }
     return edge;
 }
 
-static int EulerCircuitHelper(Package *package, const NodePtr path, const VertexId source) {
+static int EulerCircuitHelper(Package *package, const LinkNodePtr path, const VertexId source) {
     while (1) {
-        const EdgePtr edge = getEdge(package->availableEdges, source);
+        const EdgePtr edge = getEdge(package->availableEdges + source);
         if (edge == NULL)
             break;
 
@@ -53,60 +58,65 @@ static int EulerCircuitHelper(Package *package, const NodePtr path, const Vertex
         package->tmpdst = source;
     }
 
-    return source == package->tmpdst;
+    int i = source == package->tmpdst;
+    return i;
 }
 
-void EulerPath_stack(const GraphPtr graph, const NodePtr path, const VertexId src, VertexId dst) {
-    const StackPtr stack = newStack(graph->edgeNum);
-    EdgePtr **availableEdges = getAvailableEdges(graph);
-
-    path->element = src;
-    path->next = NULL;
+static int EulerPath_stack(const GraphPtr graph, EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src,
+                           VertexId dst) {
+    Stack stack;
+    stackInit(&stack, graph->edgeNum);
     Argument arg = {path, src}; // 当前函数参数
     do {
-        const EdgePtr edge = getEdge(availableEdges, arg.source);
+        const EdgePtr edge = getEdge(availableEdges + arg.source);
         if (edge == NULL) {
             if (arg.source != dst) {
-                puts("EulerCircuit: No Circuit\n");
-                nodeClear(&path->next);
-                break;
+                stackFreeData(&stack);
+                return 0;
             }
 
             // 模拟函数返回
-            arg = stackPop(stack);
+            arg = stackTop(&stack);
             dst = arg.source;
+            stackPop(&stack);
             continue;
         }
+//        printf("%d ", edge->target);
         nodeInsert(&arg.path->next, edge->target);
 
         // 模拟函数调用
-        stackPush(stack, arg);
-        arg = (Argument){arg.path->next, edge->target};
-    } while (stack->top != 0);
+        stackPush(&stack, arg);
+        arg = (Argument) {arg.path->next, edge->target};
+    } while (stack.top != 0);
 
-    free(availableEdges);
-    stackDestroy(stack);
+    stackFreeData(&stack);
+    return 1;
 }
 
-static void EulerPath_recursive(const GraphPtr graph, const NodePtr path, const VertexId src, const VertexId dst) {
-    EdgePtr **availableEdges = getAvailableEdges(graph);
-
-    path->element = src;
-    path->next = NULL;
+static inline int
+EulerPath_recursive(EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src, const VertexId dst) {
     Package package = {availableEdges, dst};
+    return EulerCircuitHelper(&package, path, src);
+}
 
-    if (!EulerCircuitHelper(&package, path, src)) {
-        puts("EulerCircuit: No Circuit\n");
+void EulerPath(const GraphPtr graph, const LinkNodePtr path, const VertexId src, const VertexId dst) {
+    EdgePtr *availableEdges = getAvailableEdges(graph);
+    path->next = NULL;
+    path->data = src;
+
+    if(availableEdges == NULL)
+        return;
+
+    if (!
+            //EulerPath_recursive(availableEdges, path, src, dst)
+            EulerPath_stack(graph, availableEdges, path, src, dst)
+            ) {
+        puts("EulerPath: No Solution!\n");
         nodeClear(&path->next);
     }
-
     free(availableEdges);
 }
 
-void EulerPath(const GraphPtr graph, const NodePtr path, const VertexId src, const VertexId dst) {
-    EulerPath_recursive(graph, path, src, dst);
-}
-
-void EulerCircuit(const GraphPtr graph, const NodePtr path, const VertexId source) {
+void EulerCircuit(const GraphPtr graph, const LinkNodePtr path, const VertexId source) {
     EulerPath(graph, path, source, source);
 }

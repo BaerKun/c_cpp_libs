@@ -1,7 +1,7 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge.h"
+#include "share/vertex_edge_data.h"
 #define MAX_VERTEX 64
 
 typedef int VertexId;

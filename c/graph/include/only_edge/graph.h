@@ -8,7 +8,7 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge.h"
+#include "share/vertex_edge_data.h"
 
 typedef int VertexId;
 typedef int EdgeId;

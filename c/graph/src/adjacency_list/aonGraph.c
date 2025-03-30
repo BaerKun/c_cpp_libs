@@ -19,7 +19,7 @@ void addActivityNode(const AonGraphPtr aonGraph, const TimeType duration) {
 }
 
 void establishDependency(const AonGraphPtr aonGraph, const NodeId start, const NodeId end) {
-    graphAddEdge(aonGraph, start, end, NO_EDGE_DATA);
+    graphAddEdge(aonGraph, start, end, (EdgeData){0}, 0);
 }
 
 static void buildCirticalPathForward(ActivityNode nodes[], const QueuePtr queue, int indegree[]) {
@@ -56,26 +56,27 @@ static void buildCriticalPathBackward(ActivityNode nodes[], const int topSort[],
 
 
 void buildCriticalPath(const AonGraphPtr aonGraph) {
-    const QueuePtr queue = newQueue(aonGraph->vertexNum);
+    Queue queue;
+    queueInit(&queue, aonGraph->vertexNum);
     int *indegree = malloc(sizeof(int) * aonGraph->vertexNum);
 
-    InitIndegree(aonGraph, indegree, queue);
+    InitIndegree(aonGraph, indegree, &queue);
 
-    if (queue->rear == 0) {
+    if (queue.size == 0) {
         fputs("BuildCriticalPath:HasCycle\n", stderr);
         goto END;
     }
 
-    buildCirticalPathForward(aonGraph->vertices, queue, indegree);
+    buildCirticalPathForward(aonGraph->vertices, &queue, indegree);
 
-    ActivityNodePtr lastOne = aonGraph->vertices + queue->elements[queue->rear - 1];
+    ActivityNodePtr lastOne = aonGraph->vertices + queue.data[queue.rear - 1];
     lastOne->data.lateStart = lastOne->data.earlyStart;
     lastOne->data.slack = 0;
 
-    buildCriticalPathBackward(aonGraph->vertices, queue->elements, aonGraph->vertexNum);
+    buildCriticalPathBackward(aonGraph->vertices, queue.data, aonGraph->vertexNum);
 
 END:
-    queue_destroy(queue);
+    queueFreeData(&queue);
     free(indegree);
 }
 
