@@ -21,41 +21,45 @@ static inline LinkNodePtr newNode(LINK_NODE_DATA_TYPE const data) {
     return node;
 }
 
-static inline void nodeInsert(LinkNodePtr *prevNextPtr, LINK_NODE_DATA_TYPE const data) {
+static inline void nodeInsert(LinkNodePtr *const prevNextPtr, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = malloc(sizeof(LinkNode));
     node->data = data;
     node->next = *prevNextPtr;
     *prevNextPtr = node;
 }
 
-static inline LinkNodePtr nodeUnlink(LinkNodePtr *prevNextPtr) {
+static inline void nodePushBack(const LinkNodePtr node, LINK_NODE_DATA_TYPE const data) {
+    nodeInsert(&node->next, data);
+}
+
+static inline LinkNodePtr nodeUnlink(LinkNodePtr *const prevNextPtr) {
     const LinkNodePtr node = *prevNextPtr;
     *prevNextPtr = node->next;
     return node;
 }
 
-static LinkNode **nodeFind(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const data) {
+static LinkNode **nodeFind(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE const data) {
     LinkNodePtr *prev = headNextPtr;
     for (LinkNodePtr node = *prev; node && node->data != data; prev = &node->next, node = *prev) {
     }
     return prev;
 }
 
-static LinkNodePtr NodeUnlinkWithData(LinkNodePtr *headNextPtr, LINK_NODE_DATA_TYPE const data) {
+static LinkNodePtr NodeUnlinkWithData(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE const data) {
     LinkNodePtr *prev = nodeFind(headNextPtr, data);
     return *prev ? nodeUnlink(prev) : NULL;
 }
 
-static inline void nodeDelete(LinkNodePtr *prevNextPtr) {
-    LinkNode *node = nodeUnlink(prevNextPtr);
-    free(node);
+static inline void nodeDelete(LinkNodePtr *const prevNextPtr) {
+    free(nodeUnlink(prevNextPtr));
 }
 
-static void nodeClear(LinkNodePtr *headNextPtr) {
-    for (LinkNodePtr node = *headNextPtr; node; node = *headNextPtr) {
-        *headNextPtr = node->next;
+static void nodeClear(LinkNodePtr *const headNextPtr) {
+    for (LinkNodePtr node = *headNextPtr, next; node; node = next) {
+        next = node->next;
         free(node);
     }
+    *headNextPtr = NULL;
 }
 
 #endif //LINK_NODE_H

@@ -44,7 +44,9 @@ void graphAddEdge(const GraphPtr graph, const VertexId source, const VertexId ta
 
         edgeInsert(&targetVertex->outEdges, reverseEdge);
         ++sourceVertex->indegree;
+        ++graph->edgeNum;
     }
     edgeInsert(&sourceVertex->outEdges, edge);
     ++targetVertex->indegree;
+    ++graph->edgeNum;
 }

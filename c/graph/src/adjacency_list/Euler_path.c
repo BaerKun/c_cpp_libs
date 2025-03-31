@@ -38,10 +38,9 @@ static EdgePtr getEdge(EdgePtr *availableEdge) {
 
     *availableEdge = edge->next;
 
-    // “删除”反向（target->source）边
-    if (edge->reverse != NULL) {
+    if (edge->reverse != NULL)
         edge->reverse->enable = 0;
-    }
+
     return edge;
 }
 
@@ -51,10 +50,11 @@ static int EulerCircuitHelper(Package *package, const LinkNodePtr path, const Ve
         if (edge == NULL)
             break;
 
-        nodeInsert(&path->next, edge->target);
+        nodePushBack(path, edge->target);
 
         if (!EulerCircuitHelper(package, path->next, edge->target))
             return 0;
+
         package->tmpdst = source;
     }
 
@@ -62,35 +62,40 @@ static int EulerCircuitHelper(Package *package, const LinkNodePtr path, const Ve
     return i;
 }
 
-static int EulerPath_stack(const GraphPtr graph, EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src,
-                           VertexId dst) {
+static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src,
+                           VertexId dst, const int edgeNum) {
     Stack stack;
-    stackInit(&stack, graph->edgeNum);
+    stackInit(&stack, edgeNum);
+
+    int success = 0;
     Argument arg = {path, src}; // 当前函数参数
-    do {
+
+    while (1) {
         const EdgePtr edge = getEdge(availableEdges + arg.source);
         if (edge == NULL) {
-            if (arg.source != dst) {
-                stackFreeData(&stack);
-                return 0;
+            if (arg.source != dst)
+                break;
+
+            if(stack.top == 0) {
+                success = 1;
+                break;
             }
 
             // 模拟函数返回
             arg = stackTop(&stack);
-            dst = arg.source;
             stackPop(&stack);
+
+            dst = arg.source;
             continue;
         }
-//        printf("%d ", edge->target);
-        nodeInsert(&arg.path->next, edge->target);
+        nodePushBack(arg.path, edge->target);
 
         // 模拟函数调用
         stackPush(&stack, arg);
         arg = (Argument) {arg.path->next, edge->target};
-    } while (stack.top != 0);
-
+    }
     stackFreeData(&stack);
-    return 1;
+    return success;
 }
 
 static inline int
@@ -109,7 +114,7 @@ void EulerPath(const GraphPtr graph, const LinkNodePtr path, const VertexId src,
 
     if (!
             //EulerPath_recursive(availableEdges, path, src, dst)
-            EulerPath_stack(graph, availableEdges, path, src, dst)
+            EulerPath_stack(availableEdges, path, src, dst, graph->edgeNum)
             ) {
         puts("EulerPath: No Solution!\n");
         nodeClear(&path->next);

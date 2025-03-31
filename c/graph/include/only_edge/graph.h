@@ -21,10 +21,10 @@ typedef struct {
 } Edge, *EdgePtr;
 
 typedef struct Graph {
+    EdgePtr edges;
     int edgeCapacity;
     int edgeNum;
     int vertexNum;
-    EdgePtr edges;
 } Graph, *GraphPtr;
 
 GraphPtr newGraph(int edgeCapacity, int vertexNum);

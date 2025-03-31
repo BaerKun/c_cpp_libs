@@ -1,6 +1,11 @@
 #ifndef DISJOINT_SET_H
 #define DISJOINT_SET_H
 
+static void disjointSetInit(int set[], const int number) {
+    for (int i = 0; i < number; i++)
+        set[i] = -1;
+}
+
 static void disjointSetUnion(int set[], const int class1, const int class2) {
     int *neg_height = set;
     if (neg_height[class1] > neg_height[class2])

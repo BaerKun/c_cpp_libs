@@ -39,7 +39,9 @@ int main(){
     }
     nodeClear(&path.next);
 
-    EulerPath(&graph, &path, 0, 4);
+    putchar('\n');
+    graphAddEdge(&graph, 0, 2, (EdgeData){0}, 1);
+    EulerPath(&graph, &path, 0, 2);
     for(LinkNode *p = &path; p; p = p->next) {
         printf("%d ", p->data);
     }

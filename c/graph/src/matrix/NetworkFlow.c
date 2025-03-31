@@ -52,12 +52,13 @@ BFS(const NetworkPtr network, const QueuePtr queue, const VertexId source, const
 
 FlowType EdmondKarpMaxFlow(const NetworkPtr network, const VertexId source, const VertexId sink) {
     FlowType singlrPathFlow;
-    const QueuePtr queue = newQueue(network->vertexNum);
+    Queue queue;
+    queueInit(&queue, network->vertexNum);
     const NetworkPtr residualNetwork = CopyNetwork(network);
     VertexId *path = malloc(network->vertexNum * sizeof(VertexId));
 
     residualNetwork->edges[source][source].data.flow = FLOW_MAX;
-    while (BFS(residualNetwork, queue, source, sink, path, &singlrPathFlow)) {
+    while (BFS(residualNetwork, &queue, source, sink, path, &singlrPathFlow)) {
         network->edges[sink][sink].data.flow += singlrPathFlow;
         for (VertexId thisVertex = sink; thisVertex != source; thisVertex = path[thisVertex]) {
             const VertexId incomingVertex = path[thisVertex];
@@ -74,7 +75,7 @@ FlowType EdmondKarpMaxFlow(const NetworkPtr network, const VertexId source, cons
     }
 
     free(path);
-    queue_destroy(queue);
+    queueFreeData(&queue);
     deleteGraph(residualNetwork);
     return network->edges[sink][sink].data.flow;
 }

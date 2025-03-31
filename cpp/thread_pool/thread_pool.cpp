@@ -21,14 +21,14 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
     for (auto &t: threads_) {
         t = std::thread([this]() {
             while (true) {
-                std::unique_lock lock(mutex_);
+                std::unique_lock<std::mutex> lock(mutex_);
                 if (taskQueue_.empty()) {
                     aTaskJoin_.wait(lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
                 }
                 if (shouldQuit_)
                     return;
 
-                const Task task = taskQueue_.front();
+                const Task task = taskQueue_.front().task;
                 taskQueue_.pop();
                 lock.unlock();
 
@@ -44,20 +44,27 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
     }
 }
 
-void ThreadPool::pushTask(const Task &task) {
+void ThreadPool::pushTask(const Task &task, const Task &rejectCallback) {
     mutex_.lock();
+
+    Task callback;
     if (queueSize_ && taskQueue_.size() == queueSize_) {
+        callback = taskQueue_.front().callback;
         taskQueue_.pop();
     } else {
         ++unfinishedTask_;
     }
-    taskQueue_.push(task);
+    taskQueue_.push({task, rejectCallback});
+
     mutex_.unlock();
     aTaskJoin_.notify_one();
+
+    if(callback)
+        callback();
 }
 
 bool ThreadPool::waitTaskOver(const int ms) {
-    std::unique_lock lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     const auto isOver = [this]() { return unfinishedTask_ == 0; };
 
     if (isOver())

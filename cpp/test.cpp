@@ -1,23 +1,31 @@
-#include <utils/link_like.h>
+#include "thread_pool.hpp"
 #include <iostream>
 
 int main() {
-    cpp_libs::LinkLike<char> link;
-    link.enqueue('a');
-    link.enqueue('b');
-    link.enqueue('c');
+    ThreadPool pool(4, 20);
+    long long result[100] = {};
 
-    while (!link.isEmpty()) {
-        std::cout << link.front() << std::endl;
-        link.dequeue();
+    for (long long i = 0; i < 100; ++i){
+        // std::this_thread::sleep_for(std::chrono::microseconds(1));
+        ThreadPool::Task task = [i, output = result + i](){
+            long long sum = 0;
+            for(long long j = i; j < i * 400; ++j){
+                sum += j;
+            }
+            *output = sum;
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
+        };
+        pool.pushTask(task, [task]() {
+            task();
+        });
     }
 
-    link.push('a');
-    link.push('b');
-    link.push('c');
+    const bool flag = pool.waitTaskOver(10);
 
-    while (!link.isEmpty()) {
-        std::cout << link.top() << std::endl;
-        link.pop();
+    for (int i = 99; i >= 0; --i){
+        std::cout << i << ": " << result[i] << std::endl;
     }
+
+    std::cout << (flag ? "true" : "false") << std::endl;
+    return 0;
 }
