@@ -22,13 +22,13 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
         t = std::thread([this]() {
             while (true) {
                 std::unique_lock<std::mutex> lock(mutex_);
-                if (taskQueue_.empty()) {
-                    aTaskJoin_.wait(lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
+                if (!shouldQuit_ && taskQueue_.empty()) {
+                    taskJoin_.wait(lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
                 }
                 if (shouldQuit_)
                     return;
 
-                const Task task = taskQueue_.front().task;
+                const Task task = taskQueue_.front();
                 taskQueue_.pop();
                 lock.unlock();
 
@@ -38,36 +38,34 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
                 --unfinishedTask_;
                 lock.unlock();
 
-                aTaskOver_.notify_all();
+                taskOver_.notify_all();
             }
         });
     }
 }
 
-void ThreadPool::pushTask(const Task &task, const Task &rejectCallback) {
+void ThreadPool::pushTask(const Task &task, const bool force) {
     mutex_.lock();
-
-    Task callback;
-    if (queueSize_ && taskQueue_.size() == queueSize_) {
-        callback = taskQueue_.front().callback;
-        taskQueue_.pop();
-    } else {
-        ++unfinishedTask_;
+    if (isQueueFull()) {
+        if (force) {
+            taskQueue_.pop();
+            taskQueue_.push(task);
+        }
+        mutex_.unlock();
+        return;
     }
-    taskQueue_.push({task, rejectCallback});
+
+    taskQueue_.push(task);
+    ++unfinishedTask_;
 
     mutex_.unlock();
-    aTaskJoin_.notify_one();
-
-    if(callback)
-        callback();
+    taskJoin_.notify_one();
 }
 
 bool ThreadPool::waitTaskOver(const int ms) {
     std::unique_lock<std::mutex> lock(mutex_);
-    const auto isOver = [this]() { return unfinishedTask_ == 0; };
 
-    if (isOver())
+    if (isTaskOver())
         return true;
 
     if (ms == 0)
@@ -76,16 +74,39 @@ bool ThreadPool::waitTaskOver(const int ms) {
     if (ms > 0) {
         // 作用和wait类似，但多了一个时间限制；
         // 返回 线程被唤醒&&条件为true&&未超时；
-        return aTaskOver_.wait_for(lock, std::chrono::milliseconds(ms), isOver);
+        return taskOver_.wait_for(lock, std::chrono::milliseconds(ms), [this]() { return isTaskOver(); });
     }
 
-    aTaskOver_.wait(lock, isOver);
+    taskOver_.wait(lock, [this]() { return isTaskOver(); });
     return true;
 }
 
+void ThreadPool::runTask() {
+    mutex_.lock();
+    if (taskQueue_.empty() || shouldQuit_) {
+        mutex_.unlock();
+        return;
+    }
+
+    const Task task = taskQueue_.front();
+    taskQueue_.pop();
+    mutex_.unlock();
+
+    task();
+
+    mutex_.lock();
+    --unfinishedTask_;
+    mutex_.unlock();
+
+    taskOver_.notify_all();
+}
+
 ThreadPool::~ThreadPool() {
+    mutex_.lock();
     shouldQuit_ = true;
-    aTaskJoin_.notify_all();
+    mutex_.unlock();
+
+    taskJoin_.notify_all();
     for (auto &t: threads_)
         t.join();
 }

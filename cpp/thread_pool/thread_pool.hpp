@@ -16,23 +16,30 @@ public:
 
     explicit ThreadPool(int threadsNumber, int taskQueueSize = 0);
 
-    void pushTask(const Task &task, const Task &rejectCallback=Task());
+    bool isTaskOver() const {
+        return unfinishedTask_ == 0;
+    }
+
+    bool isQueueFull() const {
+        return queueSize_ && taskQueue_.size() == queueSize_;
+    }
+
+    // task应该满足：若未被调用，对外界无影响
+    void pushTask(const Task &task, bool force = false);
 
     bool waitTaskOver(int ms = -1);
+
+    // 让主线程运行一个task
+    void runTask();
 
     ~ThreadPool();
 
 private:
-    struct QueueElem {
-        Task task;
-        Task callback;
-    };
-
     std::vector<std::thread> threads_;
-    std::queue<QueueElem> taskQueue_;
+    std::queue<Task> taskQueue_;
     std::mutex mutex_;
-    std::condition_variable aTaskJoin_;
-    std::condition_variable aTaskOver_;
+    std::condition_variable taskJoin_;
+    std::condition_variable taskOver_;
     int unfinishedTask_;
     int queueSize_;
     bool shouldQuit_;
