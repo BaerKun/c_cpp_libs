@@ -12,20 +12,23 @@
 
 class ThreadPool {
 public:
-    using Task = std::function<void()>;
+    enum class State { UNDEFINED, NORMAL, REJECTED };
+
+    using Task = std::function<void(State, int)>;
 
     explicit ThreadPool(int threadsNumber, int taskQueueSize = 0);
 
-    bool isTaskOver() const {
+    [[nodiscard]] bool isTaskOver() const {
         return unfinishedTask_ == 0;
     }
 
-    bool isQueueFull() const {
+    [[nodiscard]] bool isQueueFull() const {
         return queueSize_ && taskQueue_.size() == queueSize_;
     }
 
-    // task应该满足：若未被调用，对外界无影响
     void pushTask(const Task &task, bool force = false);
+
+    void pushTask(Task &&task, bool force = false);
 
     bool waitTaskOver(int ms = -1);
 

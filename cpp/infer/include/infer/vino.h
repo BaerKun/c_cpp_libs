@@ -1,37 +1,57 @@
 #ifndef VINO_INFER_H
 #define VINO_INFER_H
 
+#include <condition_variable>
 #include <functional>
 #include <openvino/openvino.hpp>
 
-namespace cpp_libs {
-    class VinoInfer {
-    public:
-        using PerformanceMode = ov::hint::PerformanceMode;
-        using InferCallback = std::function<void(void *, const ov::Shape &)>;
+class VinoAsyncInfer {
+public:
+    using PushInput = std::function<void(ov::InferRequest &, int reqId)>;
+    using InferCallback = std::function<void(ov::InferRequest &, int reqId)>;
 
-        enum class InferMode { SYNC, ASYNC };
+    explicit VinoAsyncInfer(const ov::CompiledModel &model);
 
-        explicit VinoInfer(const std::string &model_path,
-                           const std::string &device = "AUTO",
-                           PerformanceMode mode = PerformanceMode::LATENCY);
+    ~VinoAsyncInfer() = default;
 
-        void setCallback(const InferCallback &callback);
+    int getReqId();
 
-        bool infer(const void *data, InferMode mode = InferMode::ASYNC);
+    int waitReqId();
 
-        ~VinoInfer() = default;
+    void asyncInfer(int reqId);
 
-    private:
-        ov::Core core_;
-        ov::CompiledModel model_;
+    [[nodiscard]] int getNumReq() const {
+        return static_cast<int>(requests_.size());
+    }
 
-        std::mutex mutex_;
-        std::vector<ov::InferRequest> requests_;
-        std::stack<ov::InferRequest *, std::vector<ov::InferRequest *>> freeRequests_;
+    void setCallback(const InferCallback &callback) {
+        callback_ = callback;
+    }
 
-        InferCallback callback_;
-    };
-} // cpp_libs
+    void setCallback(InferCallback &&callback) {
+        callback_ = callback;
+    }
+
+    void setPushInput(const PushInput &pushInput) {
+        pushInput_ = pushInput;
+    }
+
+    void setPushInput(PushInput &&pushInput) {
+        pushInput_ = pushInput;
+    }
+
+private:
+    ov::CompiledModel model_;
+
+    std::vector<ov::InferRequest> requests_;
+    std::stack<int> freeReqId_;
+
+    std::mutex mutex_;
+    std::condition_variable inferOver_;
+
+    PushInput pushInput_;
+    InferCallback callback_;
+};
+
 
 #endif //VINO_INFER_H

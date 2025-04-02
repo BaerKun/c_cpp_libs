@@ -1,74 +1,64 @@
 #include "infer/vino.h"
 
-namespace cpp_libs {
-    VinoInfer::VinoInfer(const std::string &model_path, const std::string &device, const PerformanceMode mode) {
-        const auto model = core_.read_model(model_path);
-        model_ = core_.compile_model(model, device, ov::hint::performance_mode(mode));
+VinoAsyncInfer::VinoAsyncInfer(const ov::CompiledModel &model) {
+    model_ = model;
+    requests_ = std::vector<ov::InferRequest>(model.get_property(ov::optimal_number_of_infer_requests));
 
-        requests_ = std::vector<ov::InferRequest>(model_.get_property(ov::optimal_number_of_infer_requests));
-
-        std::vector<ov::InferRequest *> buff(requests_.size());
-        freeRequests_ = std::stack<ov::InferRequest *, std::vector<ov::InferRequest *> >(std::move(buff));
-
-        for (auto &request: requests_) {
-            request = model_.create_infer_request();
-            freeRequests_.push(&request);
-        }
-
-        callback_ = [](void *, const ov::Shape &) {
-        };
+    for (int i = static_cast<int>(requests_.size()) - 1; i >= 0; --i) {
+        requests_[i] = model_.create_infer_request();
+        freeReqId_.push(i);
     }
 
-    void VinoInfer::setCallback(const InferCallback &callback) {
-        callback_ = callback;
-
-        for (auto &request: requests_) {
-            request.set_callback([this, &request](const std::exception_ptr &eptr) {
-                if (eptr) {
-                    try {
-                        std::rethrow_exception(eptr);
-                    } catch (const std::exception &e) {
-                        std::cerr << e.what() << std::endl;
-                    }
+    for (int id = 0; id < requests_.size(); ++id) {
+        ov::InferRequest &request = requests_[id];
+        request.set_callback([this, &request, id](const std::exception_ptr &eptr) {
+            if (eptr) {
+                try {
+                    std::rethrow_exception(eptr);
+                } catch (const std::exception &e) {
+                    std::cerr << e.what() << std::endl;
                 }
+            }
 
-                const ov::Tensor &output = request.get_output_tensor();
-                callback_(output.data(), output.get_shape());
-
-                mutex_.lock();
-                freeRequests_.push(&request);
-                mutex_.unlock();
-            });
-        }
-    }
-
-
-    bool VinoInfer::infer(const void *data, const InferMode mode) {
-        mutex_.lock();
-        if (freeRequests_.empty()) {
-            mutex_.unlock();
-            return false;
-        }
-
-        const auto request = freeRequests_.top();
-        freeRequests_.pop();
-        mutex_.unlock();
-
-        const ov::Tensor tensor(model_.input().get_element_type(), ov::Shape({1, 1, 224, 224}));
-        std::memcpy(tensor.data(), data, tensor.get_byte_size());
-        request->set_input_tensor(tensor);
-
-        if (mode == InferMode::SYNC) {
-            request->infer();
-            const auto output = request->get_output_tensor();
-            callback_(output.data(), output.get_shape());
+            if (callback_)
+                callback_(request, id);
 
             mutex_.lock();
-            freeRequests_.push(request);
+            freeReqId_.push(id);
             mutex_.unlock();
-        } else {
-            request->start_async();
-        }
-        return true;
+
+            inferOver_.notify_one();
+        });
     }
-} // cpp_libs
+}
+
+int VinoAsyncInfer::getReqId() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (freeReqId_.empty())
+        return -1;
+
+    const int reqId = freeReqId_.top();
+    freeReqId_.pop();
+    return reqId;
+}
+
+int VinoAsyncInfer::waitReqId() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (freeReqId_.empty())
+        inferOver_.wait(lock, [this] { return !freeReqId_.empty(); });
+
+    const int reqId = freeReqId_.top();
+    freeReqId_.pop();
+    return reqId;
+}
+
+void VinoAsyncInfer::asyncInfer(const int reqId) {
+    if (reqId < 0 || reqId >= requests_.size())
+        throw std::runtime_error("Invalid request id");
+    if (!pushInput_)
+        throw std::runtime_error("Push input function is not set");
+
+    auto &req = requests_[reqId];
+    pushInput_(req, reqId);
+    req.start_async();
+}

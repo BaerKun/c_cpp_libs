@@ -17,22 +17,23 @@
 
 ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
     : threads_(threadsNumber), unfinishedTask_(0),
-      queueSize_(taskQueueSize), shouldQuit_(false) {
-    for (auto &t: threads_) {
-        t = std::thread([this]() {
+      queueSize_(taskQueueSize <= 0 ? 0 : taskQueueSize), shouldQuit_(false) {
+    for (int id = 0; id < threadsNumber; ++id) {
+        threads_[id] = std::thread([this, id]() {
             while (true) {
                 std::unique_lock<std::mutex> lock(mutex_);
-                if (!shouldQuit_ && taskQueue_.empty()) {
+
+                if (!shouldQuit_ && taskQueue_.empty())
                     taskJoin_.wait(lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
-                }
+
                 if (shouldQuit_)
                     return;
 
-                const Task task = taskQueue_.front();
+                const Task task = std::move(taskQueue_.front());
                 taskQueue_.pop();
                 lock.unlock();
 
-                task();
+                task(State::NORMAL, id);
 
                 lock.lock();
                 --unfinishedTask_;
@@ -45,6 +46,30 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
 }
 
 void ThreadPool::pushTask(const Task &task, const bool force) {
+    mutex_.lock();
+    if (isQueueFull()) {
+        if (!force) {
+            mutex_.unlock();
+            return;
+        }
+
+        const auto front = std::move(taskQueue_.front());
+        taskQueue_.pop();
+        taskQueue_.push(task);
+        mutex_.unlock();
+
+        front(State::REJECTED, -1);
+        return;
+    }
+
+    taskQueue_.push(task);
+    ++unfinishedTask_;
+
+    mutex_.unlock();
+    taskJoin_.notify_one();
+}
+
+void ThreadPool::pushTask(Task &&task, const bool force) {
     mutex_.lock();
     if (isQueueFull()) {
         if (force) {
@@ -88,11 +113,11 @@ void ThreadPool::runTask() {
         return;
     }
 
-    const Task task = taskQueue_.front();
+    const Task task = std::move(taskQueue_.front());
     taskQueue_.pop();
     mutex_.unlock();
 
-    task();
+    task(State::NORMAL, -1);
 
     mutex_.lock();
     --unfinishedTask_;
