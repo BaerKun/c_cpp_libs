@@ -16,8 +16,8 @@ typedef struct Heap_ Heap, *HeapPtr;
 struct Heap_ {
     HEAP_DATA_TYPE *prev; // 指向堆顶的前一个
     HEAP_DATA_TYPE *data;
-    int capacity;
     int size;
+    int capacity;
 };
 
 static void heapPercolateDown(const HeapPtr heap, const int top, const int last) {
@@ -39,26 +39,32 @@ static void heapPercolateDown(const HeapPtr heap, const int top, const int last)
 static inline void heapInit(const HeapPtr heap, const int capacity) {
     heap->data = malloc(capacity * sizeof(HEAP_DATA_TYPE));
     heap->prev = heap->data - 1;
-    heap->capacity = capacity;
     heap->size = 0;
-
+    heap->capacity = capacity;
 }
 
-static void heapPush(const HeapPtr heap, HEAP_DATA_TYPE const element) {
+static void heapPush(const HeapPtr heap, HEAP_DATA_TYPE const data) {
     int i, child;
-    for (i = ++heap->size; i && HEAP_LESS_THAN(element, heap->prev[child = i >> 1]); i = child)
+    for (i = ++heap->size; i && HEAP_LESS_THAN(data, heap->prev[child = i >> 1]); i = child)
         heap->prev[i] = heap->prev[child];
 
-    heap->prev[i] = element;
+    heap->prev[i] = data;
 }
 
-static inline void heapPop(const HeapPtr heap) {
-    heap->prev[1] = heap->prev[heap->size];
+static inline void heapPop(const HeapPtr heap, HEAP_DATA_TYPE *const ptr) {
+    if(ptr)
+        *ptr = *heap->data;
+
+    *heap->data = heap->prev[heap->size];
     heapPercolateDown(heap, 1, --heap->size);
 }
 
-static inline HEAP_DATA_TYPE heapTop(const Heap *const heap) {
-    return *heap->data;
+static inline HEAP_DATA_TYPE *heapTop(const Heap *const heap) {
+    return heap->data;
+}
+
+static inline int heapEmpty(const Heap *const heap) {
+    return heap->size == 0;
 }
 
 static inline void heapFreeData(const HeapPtr heap) {

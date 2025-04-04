@@ -18,9 +18,9 @@ void KruskalMinSpanningTree(const GraphPtr graph, EdgeId outputArray[]) {
     disjointSetInit(disjSet, graph->vertexNum);
 
     int counter = 0;
+    EdgePtr edge;
     while (heap.size != 0) {
-        const EdgePtr edge = heapTop(&heap);
-        heapPop(&heap);
+        heapPop(&heap, &edge);
 
         const int root1 = disjointSetFind(disjSet, edge->vertex1);
         const int root2 = disjointSetFind(disjSet, edge->vertex2);

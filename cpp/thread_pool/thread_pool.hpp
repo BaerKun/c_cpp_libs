@@ -12,7 +12,7 @@
 
 class ThreadPool {
 public:
-    enum class State { UNDEFINED, NORMAL, REJECTED };
+    enum class State { NORMAL, REJECTED, MAIN };
 
     using Task = std::function<void(State, int)>;
 

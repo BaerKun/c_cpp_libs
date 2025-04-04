@@ -14,9 +14,9 @@ void buildTopPath(const GraphPtr graph, VertexId parent[]) {
     for (vertex = 0; vertex < graph->vertexNum; vertex++)
         parent[vertex] = -1;
 
-    while (queue.size) {
+    while (queueEmpty(&queue)) {
         counter++;
-        vertex = dequeue(&queue);
+        dequeue(&queue, &vertex);
 
         for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {
             const VertexId adjacentVertex = thisEdge->target;
@@ -35,15 +35,16 @@ void buildTopPath(const GraphPtr graph, VertexId parent[]) {
 }
 
 void topSort(const GraphPtr graph, VertexId sortArray[]) {
-    int counter = 0;
-    int *indegree = malloc(graph->vertexNum * sizeof(int));
     Queue queue;
     queueInit(&queue, graph->vertexNum);
 
+    int *indegree = malloc(graph->vertexNum * sizeof(int));
     InitIndegree(graph, indegree, &queue);
 
-    while (queue.size) {
-        const VertexId vertex = dequeue(&queue);
+    int counter = 0;
+    VertexId vertex;
+    while (queueEmpty(&queue)) {
+        dequeue(&queue, &vertex);
         sortArray[counter++] = vertex;
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {

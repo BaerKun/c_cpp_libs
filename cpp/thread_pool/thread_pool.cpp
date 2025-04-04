@@ -117,7 +117,7 @@ void ThreadPool::runTask() {
     taskQueue_.pop();
     mutex_.unlock();
 
-    task(State::NORMAL, -1);
+    task(State::MAIN, -1);
 
     mutex_.lock();
     --unfinishedTask_;

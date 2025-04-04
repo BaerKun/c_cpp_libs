@@ -22,8 +22,8 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent, const VertexId
     heapPush(&heap, distance + source);
 
     while (heap.size) {
-        const VertexId vertex = (VertexId) (heapTop(&heap) - distance);
-        heapPop(&heap);
+        const VertexId vertex = (VertexId) (*heapTop(&heap) - distance);
+        heapPop(&heap, NULL);
         if (vertex == target)
             return;
 

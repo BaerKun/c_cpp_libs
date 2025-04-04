@@ -26,8 +26,10 @@ BFS(const NetworkPtr network, const QueuePtr queue, const VertexId source, const
 
     path[source] = source;
     enqueue(queue, source);
+
+    VertexId thisVertex;
     while (queue->front != queue->rear) {
-        const VertexId thisVertex = dequeue(queue);
+        dequeue(queue, &thisVertex);
 
         for (VertexId outgoingVertex = 0; outgoingVertex < vertexNum; outgoingVertex++) {
             if (edges[thisVertex][outgoingVertex].data.capacity && path[outgoingVertex] == -1) {

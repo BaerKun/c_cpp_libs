@@ -10,8 +10,8 @@ void buildUnweightedPath(const GraphPtr graph, VertexId *parent, const VertexId 
         parent[vertex] = -1;
 
     enqueue(&queue, source);
-    while (queue.size) {
-        vertex = dequeue(&queue);
+    while (queueEmpty(&queue)) {
+        dequeue(&queue, &vertex);
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
             const VertexId adjacentVertex = edge->target;

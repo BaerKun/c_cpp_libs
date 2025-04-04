@@ -32,8 +32,8 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId
     heapPush(&heap, minWeight + root);
 
     while (heap.size) {
-        vertex = (VertexId) (heapTop(&heap) - minWeight);
-        heapPop(&heap);
+        vertex = (VertexId) (*heapTop(&heap) - minWeight);
+        heapPop(&heap, NULL);
         hasKnown[vertex] = 1;
 
         for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {

@@ -10,33 +10,33 @@ struct LinkLike_ {
     LinkNodePtr *tail;
 };
 
-static inline void linkLikeInit(LinkLike *link) {
+static inline void linkLikeInit(LinkLike *const link) {
     link->head = NULL;
     link->tail = &link->head;
 }
 
-static inline void linkClear(LinkLike *link) {
+static inline void linkClear(LinkLike *const link) {
     nodeClear(&link->head);
     link->tail = &link->head;
 }
 
-static inline void linkPush(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
+static inline void linkPush(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
     nodeInsert(&link->head, data);
     if (link->tail == &link->head)
         link->tail = &link->head->next;
 }
 
-static inline void linkPop(LinkLike *link) {
+static inline void linkPop(LinkLike *const link) {
     nodeDelete(&link->head);
     if (link->head == NULL)
         link->tail = &link->head;
 }
 
-static inline LINK_NODE_DATA_TYPE linkTop(const LinkLike *link) {
-    return link->head->data;
+static inline LINK_NODE_DATA_TYPE *linkTop(const LinkLike *const link) {
+    return &link->head->data;
 }
 
-static void linkFilter(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
+static void linkFilter(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = NodeUnlinkWithData(&link->head, data);
     if (node == NULL)
         return;
@@ -46,16 +46,18 @@ static void linkFilter(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
         link->tail = &link->head;
 }
 
-static inline void linkEnqueue(LinkLike *link, LINK_NODE_DATA_TYPE const data) {
+static inline void linkEnqueue(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = newNode(data);
     *link->tail = node;
     link->tail = &node->next;
 }
 
-static inline LINK_NODE_DATA_TYPE linkDequeue(LinkLike *link) {
-    LINK_NODE_DATA_TYPE const data = linkTop(link);
+static inline void linkDequeue(LinkLike *const link) {
     linkPop(link);
-    return data;
+}
+
+static inline int linkEmpty(const LinkLike *const link) {
+    return link->head == NULL;
 }
 
 #endif //LINK_LIKE_H

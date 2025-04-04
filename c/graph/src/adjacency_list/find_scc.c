@@ -8,7 +8,7 @@ typedef struct VertexArg {
 } VertexArg;
 
 #define STACK_DATA_TYPE VertexArg *
-#include <stack.h>
+#include "stack.h"
 
 typedef struct {
     VertexArg *vertices;
@@ -67,17 +67,17 @@ void graphFindScc(const GraphPtr graph, int number[]) {
         vertices[vertex].outEdge = &graph->vertices[vertex].outEdges;
     }
 
+    VertexArg *vertex;
     // 正序
     const VertexArg *end = vertices + graph->vertexNum;
-    for (VertexArg *vertex = vertices; vertex != end; vertex++) {
+    for (vertex = vertices; vertex != end; vertex++) {
         if (vertex->visitedOnce == 0)
             findSccForward(&package, vertex);
     }
 
     // 逆序
     while (stack.top != 0) {
-        VertexArg *vertex = stackTop(&stack);
-        stackPop(&stack);
+        stackPop(&stack, &vertex);
         if (vertex->visitedOnce == 1)
             findSccBackward(&package, vertex);
         ++package.counter;

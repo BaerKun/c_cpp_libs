@@ -22,8 +22,8 @@ typedef struct {
 // 输入data应该升序排列，以满足搜索二叉树的性质
 TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const int number) {
     int left, root, right;
-    DPData **dp = malloc(number * sizeof (void *) + number * (number + 1) / 2 * sizeof(DPData));
-    DPData *dpBuff = (DPData *)(dp + number);
+    DPData **dp = malloc(number * sizeof(void *) + number * (number + 1) / 2 * sizeof(DPData));
+    DPData *dpBuff = (DPData *) (dp + number);
 
     /*
      *          00  01  02 ...
@@ -63,18 +63,18 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
     }
 
     TreeNodePtr *nodes = malloc(number * sizeof(TreeNodePtr));
-    for(int i = 0; i != number; ++i)
+    for (int i = 0; i != number; ++i)
         nodes[i] = malloc(sizeof(TreeNode));
+    const TreeNodePtr tree = nodes[dp[0][number - 1].root];
 
     // N个节点的二叉树最多有(N+1)/2个树叶
     Queue queue;
     queueInit(&queue, (number + 1) / 2);
     enqueue(&queue, (LeftRight){0, number - 1});
 
-    const TreeNodePtr tree = nodes[dp[0][number - 1].root];
-
-    while (queue.size) {
-        const LeftRight lr = dequeue(&queue);
+    LeftRight lr;
+    while (queueEmpty(&queue)) {
+        dequeue(&queue, &lr);
         left = lr.left;
         right = lr.right;
         root = dp[left][right].root;

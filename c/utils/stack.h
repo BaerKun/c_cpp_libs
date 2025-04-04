@@ -17,20 +17,26 @@ struct Stack_ {
 
 static inline void stackInit(const StackPtr stack, const int capacity) {
     stack->data = (STACK_DATA_TYPE *) malloc(sizeof(STACK_DATA_TYPE) * capacity);
-    stack->top = 0;
+    stack->top = -1;
     stack->capacity = capacity;
 }
 
-static inline void stackPush(const StackPtr stack, STACK_DATA_TYPE const element) {
-    stack->data[stack->top++] = element;
+static inline void stackPush(const StackPtr stack, STACK_DATA_TYPE const data) {
+    stack->data[++stack->top] = data;
 }
 
-static inline void stackPop(const StackPtr stack) {
+static inline void stackPop(const StackPtr stack, STACK_DATA_TYPE *const ptr) {
+    if(ptr)
+        *ptr = stack->data[stack->top];
     --stack->top;
 }
 
-static inline STACK_DATA_TYPE stackTop(const StackPtr stack) {
-    return stack->data[stack->top - 1];
+static inline STACK_DATA_TYPE *stackTop(const Stack *const stack) {
+    return stack->data + stack->top;
+}
+
+static inline int stackIsEmpty(const Stack *const stack) {
+    return stack->top == -1;
 }
 
 static inline void stackFreeData(const StackPtr stack) {

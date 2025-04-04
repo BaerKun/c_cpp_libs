@@ -82,8 +82,7 @@ static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, cons
             }
 
             // 模拟函数返回
-            arg = stackTop(&stack);
-            stackPop(&stack);
+            stackPop(&stack, &arg);
 
             dst = arg.source;
             continue;

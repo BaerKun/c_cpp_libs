@@ -35,7 +35,7 @@ void shellSort(SORT_DATA_TYPE *array, const int size) {
     }
 }
 
-static void percolateDown(SORT_DATA_TYPE *prev, int father, int end) {
+static void percolateDown(SORT_DATA_TYPE *prev, int father, const int end) {
     SORT_DATA_TYPE const theTop = prev[father];
 
     for (int child; (child = father << 1) <= end; father = child) {

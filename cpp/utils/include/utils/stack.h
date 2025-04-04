@@ -15,38 +15,38 @@ namespace cpp_libs {
         }
 
         [[nodiscard]] bool isEmpty() const {
-            return top_ == 0;
+            return top_ == -1;
         }
 
         void push(const DataType_ &data) {
-            if (top_ == capacity_) {
+            if (top_ + 1 == capacity_) {
                 throw std::runtime_error("Stack is full");
             }
-            data_[top_++] = data;
+            data_[++top_] = data;
         }
 
         void pop() {
-            if (top_ == 0) {
+            if (isEmpty()) {
                 throw std::runtime_error("Stack is empty");
             }
             --top_;
         }
 
         DataType_ &top() {
-            if (top_ == 0) {
+            if (isEmpty()) {
                 throw std::runtime_error("Stack is empty");
             }
-            return data_[top_ - 1];
+            return data_[top_];
         }
 
         void clear() {
-            top_ = 0;
+            top_ = -1;
         }
 
     private:
         DataType_ *data_;
+        int top_ = -1;
         int capacity_;
-        int top_ = 0;
     };
 }
 
