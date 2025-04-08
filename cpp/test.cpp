@@ -135,22 +135,22 @@ void testThreadPool() {
 //}
 
 int main(){
-//    Socket server(AddressFamily::IPv4, Protocol::TCP);
-//    server.bind("127.0.0.1", 6666);
-//    server.listen(10);
-//    Socket *client = server.accept();
-//    client->send("hello", 5);
-//    char buff[100] = {};
-//    size_t size = client->recv(buff, 100);
-//    std::cout << size << std::endl;
-//    std::cout << buff << std::endl;
-//    delete client;
-//    server.close();
-    Socket client(AddressFamily::IPv4, Protocol::UDP);
-    client.bind("127.0.0.1", 6667);
-    client.sendto("hello", 5, "127.0.0.1", 6666);
+    std::string where;
+    Socket server(AddressFamily::IPv4, Protocol::TCP);
+    server.bind("127.0.0.1", 6666);
+    server.listen(10);
+    auto client = server.accept(&where);
+    client->send("hello", 5);
     char buff[100] = {};
-    size_t size = client.recvfrom(buff, 100, nullptr);
-    std::cout << size << std::endl;
+    size_t size = client->recv(buff, 100);
+    std::cout << where << std::endl;
     std::cout << buff << std::endl;
+    // const Socket client(AddressFamily::IPv4, Protocol::UDP);
+    // client.bind("127.0.0.1", 6667);
+    // client.sendto("hello", 5, "127.0.0.1", 6666);
+    // char buff[100] = {};
+
+    // const size_t size = client.recvfrom(buff, 100, &where);
+    // std::cout << where << std::endl;
+    // std::cout << buff << std::endl;
 }

@@ -3,6 +3,7 @@
 
 #include <sys/socket.h>
 #include <string>
+#include <memory>
 
 enum class AddressFamily {
     IPv4 = AF_INET,
@@ -21,23 +22,29 @@ public:
 
     ~Socket();
 
-    void bind(const char *ip, int port);
+    // bind会显式绑定端口，若在调用bind前执行其他操作，系统会自动分配端口，此时不能再调用bind
+    void bind(const char *ip, int port) const;
 
-    void listen(int backlog);
+    // TCP
 
-    void connect(const char *ip, int port);
+    void listen(int backlog) const;
+
+    std::shared_ptr<Socket> accept(std::string *where = nullptr) const;
+
+    void connect(const char *ip, int port) const;
+
+    void send(const void *data, size_t size) const;
+
+    size_t recv(void *buff, size_t size) const;
+
+    // UDP
+
+    void sendto(const void *data, size_t size, const char *ip, int port) const;
+
+    size_t recvfrom(void *buff, size_t size, std::string *where = nullptr) const;
+
 
     void close();
-
-    void send(const void *data, size_t size);
-
-    void sendto(const void *data, size_t size, const char *ip, int port);
-
-    size_t recv(void *buff, size_t size);
-
-    size_t recvfrom(void *buff, size_t size, const char *ip);
-
-    Socket *accept(std::string *ip = nullptr);
 
 private:
     Socket() = default;
