@@ -135,22 +135,24 @@ void testThreadPool() {
 //}
 
 int main(){
-    std::string where;
-    Socket server(AddressFamily::IPv4, Protocol::TCP);
-    server.bind("127.0.0.1", 6666);
+    const Socket server(AddressFamily::IPv4, Protocol::TCP);
+    server.bind({"0.0.0.0", 6667});
     server.listen(10);
-    auto client = server.accept(&where);
+
+    SocketAddress from;
+    const auto client = server.accept(&from);
     client->send("hello", 5);
     char buff[100] = {};
     size_t size = client->recv(buff, 100);
-    std::cout << where << std::endl;
+    std::cout << from.ip << ":" << from.port << std::endl;
     std::cout << buff << std::endl;
-    // const Socket client(AddressFamily::IPv4, Protocol::UDP);
-    // client.bind("127.0.0.1", 6667);
-    // client.sendto("hello", 5, "127.0.0.1", 6666);
-    // char buff[100] = {};
 
-    // const size_t size = client.recvfrom(buff, 100, &where);
-    // std::cout << where << std::endl;
+    // const Socket client(AddressFamily::IPv4, Protocol::UDP);
+    // client.bind({"0.0.0.0", 6667});
+    // client.sendto("hello", 5, {"127.0.0.1", 6666});
+    // char buff[100] = {};
+    // SocketAddress from;
+    // size_t size = client.recvfrom(buff, 100, &from);
+    // std::cout << from.ip << ":" << from.port << std::endl;
     // std::cout << buff << std::endl;
 }
