@@ -10,13 +10,37 @@
 #include <condition_variable>
 // #include <atomic>
 
+enum class TaskState { NORMAL, REJECTED, MAIN };
+
+using Task = std::function<void(TaskState, int)>;
+
+template<unsigned QueueSize>
+class FixedTaskQueue {
+public:
+    [[nodiscard]] bool empty() const;
+
+    [[nodiscard]] unsigned size() const;
+
+    void push(const Task &task);
+
+    void push(Task &&task);
+
+    const Task &front();
+
+    void pop();
+
+private:
+    std::array<Task, QueueSize> queue_;
+    unsigned head_{}, tail_{}, size_{};
+};
+
+template<typename QueueType = std::queue<Task>>
 class ThreadPool {
 public:
-    enum class State { NORMAL, REJECTED, MAIN };
+    // TODO: 优化queueSize
+    explicit ThreadPool(unsigned threadsNumber, unsigned queueSize = 0);
 
-    using Task = std::function<void(State, int)>;
-
-    explicit ThreadPool(int threadsNumber, int taskQueueSize = 0);
+    ThreadPool(const ThreadPool &) = delete;
 
     [[nodiscard]] bool isTaskOver() const {
         return unfinishedTask_ == 0;
@@ -38,14 +62,15 @@ public:
     ~ThreadPool();
 
 private:
+    QueueType taskQueue_;
     std::vector<std::thread> threads_;
-    std::queue<Task> taskQueue_;
     std::mutex mutex_;
     std::condition_variable taskJoin_;
     std::condition_variable taskOver_;
-    int unfinishedTask_;
-    int queueSize_;
+    unsigned unfinishedTask_;
+    unsigned queueSize_;
     bool shouldQuit_;
 };
 
+#include "thread_pool.tpp"
 #endif

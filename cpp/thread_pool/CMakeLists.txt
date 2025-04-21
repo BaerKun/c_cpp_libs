@@ -1,3 +1,3 @@
-project(thread_pool)
+#project(thread_pool)
 
-add_library(thread_pool STATIC thread_pool.cpp)
+#add_library(thread_pool STATIC thread_pool.cpp)

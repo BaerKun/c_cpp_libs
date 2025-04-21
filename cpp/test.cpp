@@ -7,13 +7,14 @@
 
 
 void testThreadPool() {
-    ThreadPool pool(4, 20);
-    long long result[100] = {};
+    ThreadPool<FixedTaskQueue<100>> pool(4, 100);
+    long long result[1000] = {};
 
-    for (long long i = 0; i < 100; ++i) {
-        std::this_thread::sleep_for(std::chrono::microseconds(1));
-        ThreadPool::Task task = [i, &result](ThreadPool::State state, int id) {
-            if (state == ThreadPool::State::REJECTED) {
+    auto start = std::chrono::steady_clock::now();
+    for (long long i = 0; i < 1000; ++i) {
+        // std::this_thread::sleep_for(std::chrono::microseconds(1));
+        Task task = [i, &result](const TaskState state, int id) {
+            if (state == TaskState::REJECTED) {
                 result[i] = -1;
                 return;
             }
@@ -22,7 +23,7 @@ void testThreadPool() {
                 sum += j;
             }
             result[i] = sum;
-            std::this_thread::sleep_for(std::chrono::microseconds(500));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         };
         if (pool.isQueueFull()) {
             pool.runTask();
@@ -33,121 +34,31 @@ void testThreadPool() {
     while (!pool.isTaskOver()) {
         pool.runTask();
     }
+    auto end = std::chrono::steady_clock::now();
+    std::cout << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "ns"
+              << std::endl;
 
-    for (int i = 99; i >= 0; --i) {
-        std::cout << i << ": " << result[i] << std::endl;
-    }
+    // for (int i = 99; i >= 0; --i) {
+    //     std::cout << i << ": " << result[i] << std::endl;
+    // }
 }
 
-//int main() {
-//    std::string directory = "/home/beak/wksp/c-libs/cpp/test";
-//    std::vector<std::string> image_paths;
-//    for (const auto &entry: std::filesystem::directory_iterator(directory)) {
-//        if (entry.is_regular_file()) {
-//            std::string ext = entry.path().extension().string();
-//            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-//
-//            if (ext == ".jpg" || ext == ".png" || ext == ".bmp") {
-//                image_paths.push_back(entry.path().string());
-//            }
-//        }
-//    }
-//
-//    ov::Core core;
-//    auto model = core.read_model("/home/beak/wksp/c-libs/cpp/model/dafu-n.xml");
-//    ov::preprocess::PrePostProcessor ppp(model);
-//
-//    constexpr int N = 1;
-//    ppp.input().tensor().set_layout(ov::Layout("NHWC"))
-//            .set_shape(ov::Shape{N, 648, 1152, 3})
-//            .set_element_type(ov::element::Type_t::u8)
-//            .set_color_format(ov::preprocess::ColorFormat::BGR);
-//
-//    ppp.input().preprocess().convert_layout(ov::Layout("NCHW"))
-//            .resize(ov::preprocess::ResizeAlgorithm::RESIZE_LINEAR, 416, 416)
-//            .convert_element_type(ov::element::Type_t::f32)
-//            .scale(255.f);
-//    model = ppp.build();
-//
-//    ov::CompiledModel compiledModel
-//            = core.compile_model(model, "AUTO", ov::hint::performance_mode(ov::hint::PerformanceMode::THROUGHPUT));
-//
-//    std::cout << "optimal_number_of_infer_requests: "
-//            << compiledModel.get_property(ov::optimal_number_of_infer_requests) << std::endl;
-//
-//
-//    if (0) {
-//        ThreadPool pool((int) compiledModel.get_property(ov::optimal_number_of_infer_requests), 10);
-//        while (true) {
-//            int num = 0;
-//            auto start = std::chrono::steady_clock::now();
-//
-//            for (const auto &image_path: image_paths) {
-//                cv::Mat img = cv::imread(image_path);
-//                pool.pushTask([&num, &compiledModel, img](ThreadPool::State state, int id) {
-//                    if (state == ThreadPool::State::REJECTED) {
-//                        return;
-//                    }
-//                    const ov::Tensor t(ov::element::Type_t::u8, ov::Shape{N, 648, 1152, 3}, img.data);
-//
-//                    ov::InferRequest req = compiledModel.create_infer_request();
-//                    req.set_input_tensor(t);
-//                    req.infer();
-//                    ++num;
-//                });
-//            }
-//            pool.waitTaskOver();
-//            auto end = std::chrono::steady_clock::now();
-//            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-//            std::cout << "num: " << num << std::endl;
-//            std::cout << "total time: " << duration.count() << "ns" << std::endl;
-//            std::cout << "speed: " << duration.count() / num << "ns" << std::endl;
-//        }
-//    }
-//
-//
-//    VinoAsyncInfer infer(compiledModel);
-//    cv::Mat buff[infer.getNumReq()];
-//
-//    infer.setPushInput([&buff](ov::InferRequest &req, const int id) {
-//        const ov::Tensor t(ov::element::Type_t::u8, ov::Shape{N, 648, 1152, 3}, buff[id].data);
-//        req.set_input_tensor(t);
-//    });
-//
-//    while (true) {
-//        int num = 0;
-//        auto start = std::chrono::steady_clock::now();
-//
-//        for (const auto &image_path: image_paths) {
-//            const int id = infer.waitReqId();
-//
-//            buff[id] = cv::imread(image_path);
-//            infer.asyncInfer(id);
-//            num++;
-//        }
-//
-//        auto end = std::chrono::steady_clock::now();
-//        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-//        std::cout << "num: " << num << std::endl;
-//        std::cout << "total time: " << duration.count() << "ns" << std::endl;
-//        std::cout << "speed: " << duration.count() / num << "ns" << std::endl;
-//    }
-//}
-
 int main(){
-    const Socket server(AddressFamily::IPv4, Protocol::TCP);
-    server.bind({"0.0.0.0", 6667});
-    server.listen(10);
+    testThreadPool();
+    // const auto server = createSocket(AddressFamily::IPv4, Protocol::TCP);
+    // server.bind({"0.0.0.0", 6667});
+    // server.listen(10);
+    //
+    // SocketAddress from;
+    // const auto client = server.accept(&from);
+    // client->send("hello", 5);
+    // char buff[100] = {};
+    // size_t size = client->recv(buff, 100);
+    // std::cout << from.ip << ":" << from.port << std::endl;
+    // std::cout << buff << std::endl;
+    // std::cout << size << std::endl;
 
-    SocketAddress from;
-    const auto client = server.accept(&from);
-    client->send("hello", 5);
-    char buff[100] = {};
-    size_t size = client->recv(buff, 100);
-    std::cout << from.ip << ":" << from.port << std::endl;
-    std::cout << buff << std::endl;
-
-    // const Socket client(AddressFamily::IPv4, Protocol::UDP);
+    // auto client = createSocket(AddressFamily::IPv4, Protocol::UDP);
     // client.bind({"0.0.0.0", 6667});
     // client.sendto("hello", 5, {"127.0.0.1", 6666});
     // char buff[100] = {};
@@ -155,4 +66,7 @@ int main(){
     // size_t size = client.recvfrom(buff, 100, &from);
     // std::cout << from.ip << ":" << from.port << std::endl;
     // std::cout << buff << std::endl;
+    // std::cout << size << std::endl;
+    // client.close();
+    // std::cout << sizeof(std::function<void()>) << std::endl;
 }

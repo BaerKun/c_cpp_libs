@@ -15,9 +15,9 @@
  *  atomic用于原子操作，功能上相当于封装了lock和unlock，但底层逻辑更快
  */
 
-ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
-    : threads_(threadsNumber), unfinishedTask_(0),
-      queueSize_(taskQueueSize <= 0 ? 0 : taskQueueSize), shouldQuit_(false) {
+template<typename QueueType>
+ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber, const unsigned queueSize)
+    : threads_(threadsNumber), unfinishedTask_(0), queueSize_(queueSize), shouldQuit_(false) {
     for (int id = 0; id < threadsNumber; ++id) {
         threads_[id] = std::thread([this, id]() {
             while (true) {
@@ -33,7 +33,7 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
                 taskQueue_.pop();
                 lock.unlock();
 
-                task(State::NORMAL, id);
+                task(TaskState::NORMAL, id);
 
                 lock.lock();
                 --unfinishedTask_;
@@ -45,7 +45,8 @@ ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
     }
 }
 
-void ThreadPool::pushTask(const Task &task, const bool force) {
+template<typename QueueType>
+void ThreadPool<QueueType>::pushTask(const Task &task, const bool force) {
     mutex_.lock();
     if (isQueueFull()) {
         if (!force) {
@@ -58,7 +59,7 @@ void ThreadPool::pushTask(const Task &task, const bool force) {
         taskQueue_.push(task);
         mutex_.unlock();
 
-        front(State::REJECTED, -1);
+        front(TaskState::REJECTED, -1);
         return;
     }
 
@@ -69,25 +70,27 @@ void ThreadPool::pushTask(const Task &task, const bool force) {
     taskJoin_.notify_one();
 }
 
-void ThreadPool::pushTask(Task &&task, const bool force) {
+template<typename QueueType>
+void ThreadPool<QueueType>::pushTask(Task &&task, const bool force) {
     mutex_.lock();
     if (isQueueFull()) {
         if (force) {
             taskQueue_.pop();
-            taskQueue_.push(task);
+            taskQueue_.push(std::move(task));
         }
         mutex_.unlock();
         return;
     }
 
-    taskQueue_.push(task);
+    taskQueue_.push(std::move(task));
     ++unfinishedTask_;
 
     mutex_.unlock();
     taskJoin_.notify_one();
 }
 
-bool ThreadPool::waitTaskOver(const int ms) {
+template<typename QueueType>
+bool ThreadPool<QueueType>::waitTaskOver(const int ms) {
     std::unique_lock<std::mutex> lock(mutex_);
 
     if (isTaskOver())
@@ -106,7 +109,8 @@ bool ThreadPool::waitTaskOver(const int ms) {
     return true;
 }
 
-void ThreadPool::runTask() {
+template<typename QueueType>
+void ThreadPool<QueueType>::runTask() {
     mutex_.lock();
     if (taskQueue_.empty() || shouldQuit_) {
         mutex_.unlock();
@@ -117,7 +121,7 @@ void ThreadPool::runTask() {
     taskQueue_.pop();
     mutex_.unlock();
 
-    task(State::MAIN, -1);
+    task(TaskState::MAIN, -1);
 
     mutex_.lock();
     --unfinishedTask_;
@@ -126,7 +130,8 @@ void ThreadPool::runTask() {
     taskOver_.notify_all();
 }
 
-ThreadPool::~ThreadPool() {
+template<typename QueueType>
+ThreadPool<QueueType>::~ThreadPool() {
     mutex_.lock();
     shouldQuit_ = true;
     mutex_.unlock();
@@ -134,4 +139,43 @@ ThreadPool::~ThreadPool() {
     taskJoin_.notify_all();
     for (auto &t: threads_)
         t.join();
+}
+
+template<unsigned QueueSize>
+void FixedTaskQueue<QueueSize>::push(const Task &task) {
+    queue_[tail_] = task;
+    ++size_;
+    if (++tail_ == QueueSize)
+        tail_ = 0;
+}
+
+template<unsigned QueueSize>
+void FixedTaskQueue<QueueSize>::push(Task &&task) {
+    queue_[tail_] = std::move(task);
+    ++size_;
+    if (++tail_ == QueueSize)
+        tail_ = 0;
+}
+
+template<unsigned QueueSize>
+const Task &FixedTaskQueue<QueueSize>::front() {
+    return queue_[head_];
+}
+
+template<unsigned QueueSize>
+void FixedTaskQueue<QueueSize>::pop() {
+    queue_[head_].~Task();
+    --size_;
+    if (++head_ == QueueSize)
+        head_ = 0;
+}
+
+template<unsigned QueueSize>
+bool FixedTaskQueue<QueueSize>::empty() const {
+    return size_ == 0;
+}
+
+template<unsigned QueueSize>
+unsigned FixedTaskQueue<QueueSize>::size() const {
+    return size_;
 }

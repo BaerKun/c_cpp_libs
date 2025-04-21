@@ -3,7 +3,6 @@
 
 #include <sys/socket.h>
 #include <string>
-#include <memory>
 
 enum class AddressFamily {
     IPv4 = AF_INET,
@@ -21,11 +20,20 @@ struct SocketAddress {
     int port;
 };
 
+template<AddressFamily>
 class Socket {
 public:
-    Socket(AddressFamily addressFamily, Protocol protocol);
+    Socket() = default;
 
-    ~Socket();
+    Socket(const Socket &) = delete;
+
+    Socket(Socket &&) noexcept;
+
+    explicit Socket(Protocol pr);
+
+    ~Socket()noexcept;
+
+    void close()noexcept;
 
     /*
      * bind会显式绑定端口，若在没有调用bind时执行其他操作，系统会自动分配端口，包括UDP，此后不能再调用bind
@@ -33,6 +41,14 @@ public:
      * LOCAL模式下，客户端可以bind路径；也可以不bind，此时服务端收到的ip无意义
      */
     void bind(const SocketAddress &addr) const;
+
+
+    // UDP
+
+    void sendto(const void *data, size_t size, const SocketAddress &addr) const;
+
+    size_t recvfrom(void *buff, size_t size, SocketAddress *from = nullptr) const;
+
 
     // TCP
 
@@ -46,31 +62,15 @@ public:
 
     size_t recv(void *buff, size_t size) const;
 
-    // UDP
-
-    void sendto(const void *data, size_t size, const SocketAddress &addr) const;
-
-    size_t recvfrom(void *buff, size_t size, SocketAddress *from = nullptr) const;
-
-
-    void close();
-
 private:
-    Socket() = default;
-
-    sockaddr *getSockAddrBuff(socklen_t *len) const;
-
-    sockaddr *getSockAddr(socklen_t *len, const SocketAddress &addr) const;
-
-    void freeSockAddr(sockaddr *addr) const;
-
-    void getWhereFrom(SocketAddress *from, sockaddr *addr) const;
-
     // socket file descriptor
-    int sockfd_;
-    int addressFamily_;
-    int protocol_;
+    int sockfd_{};
 };
 
+extern template class Socket<AddressFamily::IPv4>;
+extern template class Socket<AddressFamily::IPv6>;
+extern template class Socket<AddressFamily::LOCAL>;
+
+#define createSocket(af, pr) Socket<af>(pr)
 
 #endif //CPP_LIBS_SOCKET_HPP

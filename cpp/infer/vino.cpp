@@ -1,4 +1,4 @@
-#include "infer/vino.h"
+#include "vino.h"
 
 VinoAsyncInfer::VinoAsyncInfer(const ov::CompiledModel &model) {
     model_ = model;

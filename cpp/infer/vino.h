@@ -5,6 +5,10 @@
 #include <functional>
 #include <openvino/openvino.hpp>
 
+/*
+ * 展现了线程池的另一种实现方式，但是在cpu上似乎不如自实现线程池+同步推理？！
+ */
+
 class VinoAsyncInfer {
 public:
     using PushInput = std::function<void(ov::InferRequest &, int reqId)>;
