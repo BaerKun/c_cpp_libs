@@ -19,7 +19,7 @@ class FixedTaskQueue {
 public:
     [[nodiscard]] bool empty() const;
 
-    [[nodiscard]] unsigned size() const;
+    [[nodiscard]] bool full() const;
 
     void push(const Task &task);
 
@@ -37,18 +37,13 @@ private:
 template<typename QueueType = std::queue<Task>>
 class ThreadPool {
 public:
-    // TODO: 优化queueSize
-    explicit ThreadPool(unsigned threadsNumber, unsigned queueSize = 0);
+    explicit ThreadPool(unsigned threadsNumber);
 
     ThreadPool(const ThreadPool &) = delete;
 
-    [[nodiscard]] bool isTaskOver() const {
-        return unfinishedTask_ == 0;
-    }
+    [[nodiscard]] bool isTaskOver() const;
 
-    [[nodiscard]] bool isQueueFull() const {
-        return queueSize_ && taskQueue_.size() == queueSize_;
-    }
+    [[nodiscard]] bool isQueueFull() const;
 
     void pushTask(const Task &task, bool force = false);
 
@@ -68,7 +63,6 @@ private:
     std::condition_variable taskJoin_;
     std::condition_variable taskOver_;
     unsigned unfinishedTask_;
-    unsigned queueSize_;
     bool shouldQuit_;
 };
 

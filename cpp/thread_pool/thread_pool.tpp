@@ -16,8 +16,8 @@
  */
 
 template<typename QueueType>
-ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber, const unsigned queueSize)
-    : threads_(threadsNumber), unfinishedTask_(0), queueSize_(queueSize), shouldQuit_(false) {
+ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber)
+    : threads_(threadsNumber), unfinishedTask_(0), shouldQuit_(false) {
     for (int id = 0; id < threadsNumber; ++id) {
         threads_[id] = std::thread([this, id]() {
             while (true) {
@@ -43,6 +43,31 @@ ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber, const unsigned q
             }
         });
     }
+}
+
+template<typename QueueType>
+bool ThreadPool<QueueType>::isTaskOver() const {
+    return unfinishedTask_ == 0;
+}
+
+/*
+ * 判断QueueType是否有full方法(c++17)
+ * declval<T>()：返回一个仅用于类型推导的T的“实例”
+ * decltype(V)：返回V的类型
+ * std::void_t<T>：无论如何返回void，实现偏特化void
+ * 若.full()编译失败，退化为通用模版
+ */
+template<typename QueueType, typename = void>
+static constexpr bool has_full_method = false;
+template<typename QueueType>
+static constexpr bool has_full_method<QueueType, 
+    std::void_t<decltype(std::declval<QueueType>().full())>> = true;
+
+template<typename QueueType>
+bool ThreadPool<QueueType>::isQueueFull() const {
+    if constexpr (has_full_method<QueueType>)
+        return taskQueue_.full();
+    return false;
 }
 
 template<typename QueueType>
@@ -176,6 +201,6 @@ bool FixedTaskQueue<QueueSize>::empty() const {
 }
 
 template<unsigned QueueSize>
-unsigned FixedTaskQueue<QueueSize>::size() const {
-    return size_;
+bool FixedTaskQueue<QueueSize>::full() const {
+    return size_ == QueueSize;
 }
