@@ -1,8 +1,8 @@
 .vscode
-
 .idea
 cmake-build-debug
-
 build
-tmp*
 .DS_Store
+
+tmp*
+_*

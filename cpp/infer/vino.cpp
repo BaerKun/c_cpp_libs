@@ -1,8 +1,8 @@
 #include "vino.h"
 
-VinoAsyncInfer::VinoAsyncInfer(const ov::CompiledModel &model) {
+VinoAsyncInfer::VinoAsyncInfer(const ov::CompiledModel &model, const size_t numReq) {
     model_ = model;
-    requests_ = std::vector<ov::InferRequest>(model.get_property(ov::optimal_number_of_infer_requests));
+    requests_ = std::vector<ov::InferRequest>(numReq);
 
     for (int i = static_cast<int>(requests_.size()) - 1; i >= 0; --i) {
         requests_[i] = model_.create_infer_request();

@@ -7,8 +7,9 @@ include_directories(utils/include)
 
 add_subdirectory(socket)
 add_subdirectory(thread_pool)
+add_subdirectory(OR)
 #add_subdirectory(infer)
 
-add_executable(test test.cpp)
+add_executable(test _test.cpp)
 target_include_directories(test PUBLIC thread_pool infer)
-target_link_libraries(test PUBLIC my_socket)
+target_link_libraries(test PUBLIC my_socket OR)

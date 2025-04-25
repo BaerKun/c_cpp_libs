@@ -14,7 +14,7 @@ public:
     using PushInput = std::function<void(ov::InferRequest &, int reqId)>;
     using InferCallback = std::function<void(ov::InferRequest &, int reqId)>;
 
-    explicit VinoAsyncInfer(const ov::CompiledModel &model);
+    explicit VinoAsyncInfer(const ov::CompiledModel &model, size_t numReq);
 
     ~VinoAsyncInfer() = default;
 
