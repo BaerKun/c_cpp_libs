@@ -34,7 +34,7 @@ namespace cpp_libs {
     }
 }
 
-#include "sort.hpp"
+#include "sort.tpp"
 
 #undef CallbackType
 #endif //SORT_H

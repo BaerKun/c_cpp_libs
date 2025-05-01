@@ -5,43 +5,44 @@
 #include <Eigen/Dense>
 
 // 需要手算标准形
-template<int N_B, int N_C, typename T>
-bool simplexMethodMax(Eigen::Matrix<T, N_B, N_C> &A, Eigen::Vector<T, N_B> &b, Eigen::Vector<T, N_C> &c,
-                      std::array<Eigen::Index, N_B> &base, Eigen::Vector<T, N_C> &x, T &f) {
+template<int Rows, int Cols, typename T>
+bool simplexMethodMax(Eigen::Matrix<T, Rows, Cols> &A, Eigen::Vector<T, Rows> &b, Eigen::RowVector<T, Cols> &c,
+                      Eigen::Vector<Eigen::Index, Rows> &base, Eigen::Vector<T, Cols> &x, T &f) {
+    const Eigen::Index rows = Rows >= 0 ? Rows : b.size();
     x.setZero();
     f = 0;
-    for (Eigen::Index i = 0; i < N_B; ++i) {
+    for (Eigen::Index i = 0; i <= rows; ++i) {
         Eigen::Index colIdx;
         const float maxC = c.maxCoeff(&colIdx);
         if (maxC <= 0) {
-            for (Eigen::Index j = 0; j < N_B; ++j) {
-                x[base[j]] = b[j];
+            for (Eigen::Index r = 0; r < rows; ++r) {
+                x[base[r]] = b[r];
             }
             return true;
         }
-
         auto col = A.col(colIdx);
-        Eigen::Index rowIdx = N_B;
+
+        Eigen::Index rowIdx = rows;
         float minTheta = std::numeric_limits<T>::max();
-        for (Eigen::Index j = 0; j < N_B; ++j) {
-            if (col(j) > 0) {
-                if (const float theta = b(j) / col(j); theta < minTheta) {
+        for (Eigen::Index r = 0; r < rows; ++r) {
+            if (col(r) > 0) {
+                if (const float theta = b(r) / col(r); theta < minTheta) {
                     minTheta = theta;
-                    rowIdx = j;
+                    rowIdx = r;
                 }
             }
         }
-        if (rowIdx == N_B) {
+        if (rowIdx == rows) {
             return false;
         }
 
         auto row = A.row(rowIdx);
-        b(rowIdx) /= col(rowIdx);
-        row /= col(rowIdx);
-        for (Eigen::Index j = 0; j < N_B; ++j) {
-            if (j != rowIdx) {
-                b(j) -= b(rowIdx) * col(j);
-                A.row(j) -= row * col(j);
+        b(rowIdx) /= row(colIdx);
+        row /= row(colIdx);
+        for (Eigen::Index r = 0; r < rows; ++r) {
+            if (r != rowIdx) {
+                b(r) -= b(rowIdx) * col(r);
+                A.row(r) -= row * col(r);
             }
         }
 
@@ -51,8 +52,5 @@ bool simplexMethodMax(Eigen::Matrix<T, N_B, N_C> &A, Eigen::Vector<T, N_B> &b, E
     }
     return false;
 }
-
-bool simplexMethodMax(Eigen::MatrixXf &A, Eigen::VectorXf &b, Eigen::VectorXf &c,
-                      std::vector<Eigen::Index> &base, Eigen::VectorXf &x, float &f);
 
 #endif //LINEAR_H
