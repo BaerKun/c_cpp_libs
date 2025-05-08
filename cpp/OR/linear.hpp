@@ -1,12 +1,13 @@
 #ifndef LINEAR_H
 #define LINEAR_H
 
+#include <vector>
 #include <Eigen/Core>
 
 namespace OR {
     enum Optim { Maximize, Minimize };
 
-    enum CompareSymbol { Equal, Less_Equal, Greater_Equal };
+    enum CompareSymbol { Equal, LessEqual, GreaterEqual };
 
     template<int Dims>
     constexpr int DIMS_MINUS_ONE = Dims == Eigen::Dynamic ? Eigen::Dynamic : Dims - 1;

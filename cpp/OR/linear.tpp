@@ -14,7 +14,7 @@ namespace OR {
         auto objCoeff = stdf.row(rhs.rows()).segment(0, x.rows());
 
         for (Eigen::Index iter = 0; iter < stdf.rows(); ++iter) {
-            // choose max/min value(c)
+            // choose max/min objective coefficient (c)
             Eigen::Index entering; // 入基变量
             if (Optim == Maximize ? objCoeff.maxCoeff(&entering) <= EPS : objCoeff.minCoeff(&entering) >= -EPS) {
                 x.setZero();
@@ -62,7 +62,7 @@ namespace OR {
         auto objCoeff = stdf.row(rhs.rows()).segment(0, x.rows());
 
         for (Eigen::Index i = 0; i < stdf.rows(); ++i) {
-            // choose min b
+            // choose min rhs(b)
             Eigen::Index leaving;
             if (rhs.minCoeff(&leaving) >= -EPS) {
                 x.setZero();
@@ -114,109 +114,97 @@ namespace OR {
         return false;
     }
 
-
     template<typename T>
     bool LinearProblem<T>::solve(Eigen::VectorX<T> &x, T &f) {
-        const int numVar = objective_.cols();
-        const size_t numConstr = constraints_.size();
+        const Eigen::Index numVar = objective_.cols();
+        const Eigen::Index numConstr = constraints_.size();
         Eigen::VectorX<Eigen::Index> basic(constraints_.size());
 
-        int numSlack = 0; // 松弛变量
-        int numArtificial = 0; // 人工变量
+        Eigen::Index numSlack = 0; // 松弛变量
+        Eigen::Index numArtificial = 0; // 人工变量
         for (const auto &constr: constraints_) {
             switch (constr.symbol) {
                 case Equal:
                     numArtificial += 1;
                     break;
-                case Less_Equal:
+                case LessEqual:
                     numSlack += 1;
                     break;
-                case Greater_Equal:
+                case GreaterEqual:
                     numSlack += 1;
                     numArtificial += 1;
-                    break;
                 default:
                     break;
             }
         }
+        const Eigen::Index numVarSlack = numVar + numSlack;
+        const Eigen::Index totalVar = numVarSlack + numArtificial;
 
         // 初始化标准型矩阵
-        Matrix stdf1 = Matrix::Zero(numConstr + 1, numVar + numSlack + numArtificial + 1);
-        auto objCoeff1 = stdf1.row(numConstr);
-        auto rhs1 = stdf1.col(numVar + numSlack + numArtificial);
+        stdf_.resize(numConstr + 1, totalVar + 1);
+        auto objCoeff = stdf_.row(numConstr);
+        auto rhs = stdf_.col(totalVar);
 
-        for (Eigen::Index i = 0, s = 0, a = 0; i < numConstr; ++i) {
-            const auto &constr = constraints_[i];
-            auto row = stdf1.row(i);
+        stdf_.rightCols(numSlack + numArtificial + 1).setZero();
+        for (Eigen::Index r = 0, slackIdx = numVar, artificialIdx = numVarSlack; r < numConstr; ++r) {
+            const auto &constr = constraints_[r];
+            auto row = stdf_.row(r);
             row.segment(0, numVar) = constr.coeffs;
-            rhs1(i) = constr.rhs;
+            rhs(r) = constr.rhs;
 
-            Eigen::Index b;
+            Eigen::Index entering;
             switch (constr.symbol) {
                 case Equal:
-                    b = numVar + numSlack + a++;
+                    entering = artificialIdx++;
                     break;
-                case Less_Equal:
-                    b = numVar + s++;
+                case LessEqual:
+                    entering = slackIdx++;
                     break;
-                case Greater_Equal:
-                    row(numVar + s++) = -1;
-                    b = numVar + numSlack + a++;
-                    break;
+                case GreaterEqual:
+                    row(slackIdx++) = -1;
+                    entering = artificialIdx++;
                 default:
                     break;
             }
-            row(b) = 1;
-            basic(i) = b;
+            row(entering) = 1;
+            basic(r) = entering;
         }
-        Eigen::VectorX<T> stdfX1(numVar + numSlack + numArtificial);
+        Eigen::VectorX<T> stdfX(totalVar);
 
         // 直接单纯形法
         if (numArtificial == 0) {
-            objCoeff1.segment(0, numVar) = objective_;
-            if (simplexMethod<Maximize>(stdf1, basic, stdfX1, f)) {
-                x = stdfX1.segment(0, numVar);
-                stdf_ = std::move(stdf1);
-                return true;
-            }
-            return false;
+            objCoeff.segment(0, numVar) = objective_;
+            if (!simplexMethod<Maximize>(stdf_, basic, stdfX, f)) return false;
+            x = stdfX.segment(0, numVar);
+            return true;
         }
 
         // 两阶段法
-        for (Eigen::Index i = 0; i < numArtificial; ++i) {
-            objCoeff1(numVar + numSlack + i) = 1;
-        }
+        // 第一阶段：Minimize sum(artificial)
+        objCoeff.segment(0, numVar).setZero();
+        objCoeff.segment(numVarSlack, numArtificial).setOnes();
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
-            if (basic[i] >= numVar + numSlack) {
-                objCoeff1 -= stdf1.row(i);
-            }
+            if (basic[i] >= numVarSlack)
+                objCoeff -= stdf_.row(i);
         }
 
-        if (!simplexMethod<Minimize>(stdf1, basic, stdfX1, f)) {
-            return false;
-        }
-        if (f > EPS) {
-            return false;
-        }
+        if (!simplexMethod<Minimize>(stdf_, basic, stdfX, f)) return false;
+        if (f > EPS) return false;
 
         // 第二阶段
-        Matrix stdf2(numConstr + 1, numVar + numSlack + 1);
-        auto objCoeff2 = stdf2.row(numConstr);
+        stdf_.col(numVarSlack) = rhs; // 复制rhs，防止resize后丢失
+        stdf_.conservativeResize(numConstr + 1, numVarSlack + 1); // 重新分配内存，并保留部分原有数据
 
-        stdf2.topLeftCorner(numConstr, numVar + numSlack) = stdf1.topLeftCorner(numConstr, numVar + numSlack);
-        stdf2.col(numVar + numSlack) = rhs1;
-        objCoeff2.setZero();
+        auto objCoeff2 = stdf_.row(numConstr); // Block不能重新引用，必须声明新变量
         objCoeff2.segment(0, numVar) = objective_;
+        objCoeff2.segment(numVar, numSlack + 1).setZero();
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
-            objCoeff2 -= stdf2.row(i) * objective_(basic(i));
+            objCoeff2 -= stdf_.row(i) * objective_(basic(i));
         }
 
-        Eigen::VectorX<T> stdfX2(numVar + numSlack);
-        if (!simplexMethod<Maximize>(stdf2, basic, stdfX2, f)) {
-            return false;
-        }
-        x = stdfX2.segment(0, numVar);
-        stdf_ = std::move(stdf2);
+        stdfX.resize(numVarSlack);
+        if (!simplexMethod<Maximize>(stdf_, basic, stdfX, f)) return false;
+        x = stdfX.segment(0, numVar);
         return true;
     }
 }
