@@ -23,8 +23,10 @@ void establishDependency(const AonGraphPtr aonGraph, const NodeId start, const N
 }
 
 static void buildCirticalPathForward(ActivityNode nodes[], const QueuePtr queue, int indegree[]) {
+    int i;
     while (queue->front != queue->rear) {
-        const ActivityNodePtr node = nodes + dequeue(queue);
+        dequeue(queue, &i);
+        const ActivityNodePtr node = nodes + i;
         for (const Dependency *dependency = node->outEdges; dependency; dependency = dependency->next) {
             const NodeId successorId = dependency->target;
             const ActivityNodePtr successor = nodes + successorId;
@@ -62,7 +64,7 @@ void buildCriticalPath(const AonGraphPtr aonGraph) {
 
     InitIndegree(aonGraph, indegree, &queue);
 
-    if (queue.size == 0) {
+    if (queueEmpty(&queue)) {
         fputs("BuildCriticalPath:HasCycle\n", stderr);
         goto END;
     }

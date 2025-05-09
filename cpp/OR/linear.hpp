@@ -34,6 +34,10 @@ namespace OR {
             objective_ = objective;
         }
 
+        void setObjective(Eigen::RowVectorX<T> &&objective) {
+            objective_ = std::move(objective);
+        }
+
         void addConstraint(const Constraint<T> &constraint) {
             constraints_.push_back(constraint);
         }

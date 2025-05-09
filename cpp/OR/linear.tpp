@@ -141,11 +141,10 @@ namespace OR {
         const Eigen::Index totalVar = numVarSlack + numArtificial;
 
         // 初始化标准型矩阵
-        stdf_.resize(numConstr + 1, totalVar + 1);
+        stdf_ = Matrix::Zero(numConstr + 1, totalVar + 1);
         auto objCoeff = stdf_.row(numConstr);
         auto rhs = stdf_.col(totalVar);
 
-        stdf_.rightCols(numSlack + numArtificial + 1).setZero();
         for (Eigen::Index r = 0, slackIdx = numVar, artificialIdx = numVarSlack; r < numConstr; ++r) {
             const auto &constr = constraints_[r];
             auto row = stdf_.row(r);
@@ -181,7 +180,6 @@ namespace OR {
 
         // 两阶段法
         // 第一阶段：Minimize sum(artificial)
-        objCoeff.segment(0, numVar).setZero();
         objCoeff.segment(numVarSlack, numArtificial).setOnes();
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
             if (basic[i] >= numVarSlack)
@@ -198,8 +196,10 @@ namespace OR {
         auto objCoeff2 = stdf_.row(numConstr); // Block不能重新引用，必须声明新变量
         objCoeff2.segment(0, numVar) = objective_;
         objCoeff2.segment(numVar, numSlack + 1).setZero();
+
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
-            objCoeff2 -= stdf_.row(i) * objective_(basic(i));
+            if (const Eigen::Index b = basic(i); b < numVar)
+                objCoeff2 -= stdf_.row(i) * objective_(b);
         }
 
         stdfX.resize(numVarSlack);

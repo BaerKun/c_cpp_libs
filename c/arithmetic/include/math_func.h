@@ -21,9 +21,14 @@ struct ComputationNode_ {
 };
 
 /*
- * 用constant/variable/intermediate创建的节点必须手动调用mfDelete删除
- * 而用mfAdd/...创建的节点只需要对“树”的根调用，
+ * constant/variable/intermediate创建的节点必须手动调用mfDelete删除
+ * autoConstant/autoIntermediate创建的节点加入计算图后，不需要手动调用mfDelete删除
+ * mfAdd/...创建的节点与autoXXX相同，只需要对根节点调用
  */
+
+ComputationNodePtr autoConstant(float value);
+
+ComputationNodePtr autoIntermediate(OperationType operation);
 
 ComputationNode *constant(float value);
 

@@ -61,8 +61,9 @@ void weightedPath(const GraphPtr graph, VertexId *parent, const VertexId source)
     distance[source] = 0;
     isInQueue[source] = 1;
 
+    VertexId vertex;
     while (queue.size) {
-        const VertexId vertex = dequeue(&queue);
+        dequeue(&queue, &vertex);
         isInQueue[vertex] = 0;
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
