@@ -33,7 +33,7 @@ static inline STACK_DATA_TYPE *stackTop(const Stack *const stack) {
     return stack->data + stack->top;
 }
 
-static inline int stackIsEmpty(const Stack *const stack) {
+static inline int stackEmpty(const Stack *const stack) {
     return stack->top == -1;
 }
 

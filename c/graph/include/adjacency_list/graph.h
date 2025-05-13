@@ -18,7 +18,7 @@ struct Vertex_ {
 struct Edge_ {
     EdgePtr next;
     VertexId target;
-    int enable; // 用于懒惰删除
+    int flag;
     EdgePtr reverse;
     EdgeData data;
 };

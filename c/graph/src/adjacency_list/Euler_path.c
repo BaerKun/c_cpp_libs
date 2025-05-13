@@ -1,66 +1,69 @@
 #include "adjacency_list/Euler_path.h"
-#include <stdio.h>
 
+
+// 递归实现
 typedef struct {
-    LinkNodePtr path;
-    VertexId source;
-} Argument;
+    EdgePtr *unvisitedEdges;
+    VertexId dfsDst; // 当前深度优先搜索的目标顶点
+} Package; // 全局量
 
-#define STACK_DATA_TYPE Argument
-
-#include "stack.h"
-
-typedef struct {
-    EdgePtr *availableEdges;
-    VertexId tmpdst;
-} Package;
-
-// availableEdges[v] 顶点v的可用边链表，充当递归时的“全局变量”
-static EdgePtr *getAvailableEdges(const GraphPtr graph) {
-    EdgePtr *availableEdges = malloc(graph->vertexNum * sizeof(void *));
-
+static EdgePtr *getUnvisitedEdges(const GraphPtr graph) {
+    EdgePtr *unvisitedEdges = malloc(graph->vertexNum * sizeof(EdgePtr));
     for (VertexId v = 0; v < graph->vertexNum; v++)
-        availableEdges[v] = graph->vertices[v].outEdges;
-
-    return availableEdges;
+        unvisitedEdges[v] = graph->vertices[v].outEdges;
+    return unvisitedEdges;
 }
 
-static EdgePtr getEdge(EdgePtr *availableEdge) {
+static EdgePtr getTargetEdge(EdgePtr *unvisitedEdge) {
     EdgePtr edge;
-    for (edge = *availableEdge; edge && !edge->enable; edge = edge->next) {
+    for (edge = *unvisitedEdge; edge && !edge->flag; edge = edge->next) {
         // 使用完重置
-        edge->enable = 1;
+        edge->flag = 1;
     }
+
+    // 更新
     if (edge == NULL) {
-        *availableEdge = NULL;
+        *unvisitedEdge = NULL;
         return NULL;
     }
-
-    *availableEdge = edge->next;
+    *unvisitedEdge = edge->next;
 
     if (edge->reverse != NULL)
-        edge->reverse->enable = 0;
-
+        edge->reverse->flag = 0; // 用作懒惰删除
     return edge;
 }
 
-static int EulerCircuitHelper(Package *package, const LinkNodePtr path, const VertexId source) {
+static int EulerCircuitStep(Package *package, const LinkNodePtr path, const VertexId src) {
     while (1) {
-        const EdgePtr edge = getEdge(package->availableEdges + source);
+        const EdgePtr edge = getTargetEdge(package->unvisitedEdges + src);
         if (edge == NULL)
             break;
 
         nodePushBack(path, edge->target);
 
-        if (!EulerCircuitHelper(package, path->next, edge->target))
+        if (!EulerCircuitStep(package, path->next, edge->target))
             return 0;
 
-        package->tmpdst = source;
+        package->dfsDst = src;
     }
 
-    int i = source == package->tmpdst;
-    return i;
+    return src == package->dfsDst;
 }
+
+static inline int
+EulerPath_recursive(EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src, const VertexId dst) {
+    Package package = {availableEdges, dst};
+    return EulerCircuitStep(&package, path, src);
+}
+
+
+// 栈实现
+typedef struct {
+    LinkNodePtr path;
+    VertexId src;
+} Argument; // 入栈量，与递归相对
+#define STACK_DATA_TYPE Argument
+#include "stack.h"
 
 static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src,
                            VertexId dst, const int edgeNum) {
@@ -71,57 +74,52 @@ static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, cons
     Argument arg = {path, src}; // 当前函数参数
 
     while (1) {
-        const EdgePtr edge = getEdge(availableEdges + arg.source);
+        const EdgePtr edge = getTargetEdge(availableEdges + arg.src);
         if (edge == NULL) {
-            if (arg.source != dst)
+            if (arg.src != dst)
                 break;
 
-            if (stack.top == 0) {
+            // 结束
+            if (stackEmpty(&stack)) {
                 success = 1;
                 break;
             }
 
-            // 模拟函数返回
+            // 返回
             arg = *stackTop(&stack);
             stackPop(&stack);
 
-            dst = arg.source;
+            dst = arg.src;
             continue;
         }
         nodePushBack(arg.path, edge->target);
 
-        // 模拟函数调用
+        // 调用
         stackPush(&stack, arg);
         arg = (Argument){arg.path->next, edge->target};
     }
+
     stackFreeData(&stack);
     return success;
 }
 
-static inline int
-EulerPath_recursive(EdgePtr *availableEdges, const LinkNodePtr path, const VertexId src, const VertexId dst) {
-    Package package = {availableEdges, dst};
-    return EulerCircuitHelper(&package, path, src);
-}
 
-void EulerPath(const GraphPtr graph, const LinkNodePtr path, const VertexId src, const VertexId dst) {
-    EdgePtr *availableEdges = getAvailableEdges(graph);
-    path->next = NULL;
-    path->data = src;
-
-    if (availableEdges == NULL)
+void EulerPath(const GraphPtr graph, LinkNodePtr *const path, const VertexId src, const VertexId dst) {
+    EdgePtr *unvisitedEdges = getUnvisitedEdges(graph);
+    if (unvisitedEdges == NULL)
         return;
 
+    *path = newNode(src);
     if (!
-        //EulerPath_recursive(availableEdges, path, src, dst)
-        EulerPath_stack(availableEdges, path, src, dst, graph->edgeNum)
+        // EulerPath_recursive(unvisitedEdges, path, src, dst)
+        EulerPath_stack(unvisitedEdges, *path, src, dst, graph->edgeNum)
     ) {
-        puts("EulerPath: No Solution!\n");
-        nodeClear(&path->next);
+        nodeClear(path);
     }
-    free(availableEdges);
+
+    free(unvisitedEdges);
 }
 
-void EulerCircuit(const GraphPtr graph, const LinkNodePtr path, const VertexId source) {
-    EulerPath(graph, path, source, source);
+void EulerCircuit(const GraphPtr graph, LinkNodePtr *const path, const VertexId src) {
+    EulerPath(graph, path, src, src);
 }

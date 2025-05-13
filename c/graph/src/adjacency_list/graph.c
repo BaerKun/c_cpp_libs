@@ -27,7 +27,7 @@ void graphAddEdge(const GraphPtr graph, const VertexId source, const VertexId ta
     const EdgePtr edge = malloc(sizeof(Edge));
     edge->next = NULL;
     edge->target = target;
-    edge->enable = 1;
+    edge->flag = 1;
     edge->data = data;
 
     if(!undirected){
@@ -36,7 +36,7 @@ void graphAddEdge(const GraphPtr graph, const VertexId source, const VertexId ta
         const EdgePtr reverseEdge = malloc(sizeof(Edge));
         reverseEdge->next = NULL;
         reverseEdge->target = source;
-        reverseEdge->enable = 1;
+        reverseEdge->flag = 1;
         reverseEdge->reverse = edge;
         reverseEdge->data = data;
 
