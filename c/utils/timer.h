@@ -25,7 +25,7 @@ static inline void timerStop(Timer *timer) {
     timer->read += (now.tv_sec - timer->last.tv_sec) * 1000000000llu + (now.tv_nsec - timer->last.tv_nsec);
 }
 
-static inline unsigned long long timerGetns(const Timer *timer) {
+static inline unsigned long long timerRead(const Timer *timer) {
     return timer->read;
 }
 #endif
@@ -55,7 +55,7 @@ static inline void timerStop(Timer *timer) {
     timer->read.QuadPart += now.QuadPart - timer->last.QuadPart;
 }
 
-static inline unsigned long long timerGetns(const Timer *timer) {
+static inline unsigned long long timerRead(const Timer *timer) {
     return timer->read.QuadPart * 1000000000llu / timer->freq.QuadPart;
 }
 

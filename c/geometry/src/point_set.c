@@ -14,7 +14,7 @@
 #include "stack.h"
 
 static void convexHullHelper(const StackPtr stack, const Point2f p) {
-    const Point2f *ptr2pt = stack->elements + stack->top - 1;
+    const Point2f *ptr2pt = stackTop(stack);
     Point2f p2 = *ptr2pt;
     Vector2f vec2 = (Vector2f){p.x - p2.x, p.y - p2.y};
 
@@ -119,20 +119,21 @@ void convexHull(Point2f pts[], Point2f hullpts[], int npts, int *nhullpts) {
 
     sort((Point2f *) tmp, npts);
 
-    const StackPtr stack = newStack(npts);
-    stackPush(stack, pts[tmp[0].index]);
-    stackPush(stack, pts[tmp[1].index]);
-    stackPush(stack, pts[tmp[2].index]);
+    Stack stack;
+    stackInit(&stack, npts);
+    stackPush(&stack, pts[tmp[0].index]);
+    stackPush(&stack, pts[tmp[1].index]);
+    stackPush(&stack, pts[tmp[2].index]);
 
     for (int i = 3; i < npts; ++i)
-        convexHullHelper(stack, pts[tmp[i].index]);
+        convexHullHelper(&stack, pts[tmp[i].index]);
 
-    convexHullHelper(stack, origin);
+    convexHullHelper(&stack, origin);
 
-    *nhullpts = stack->top - 1;
-    memcpy(hullpts, stack->elements, sizeof(Point2f) * *nhullpts);
+    *nhullpts = stack.top;
+    memcpy(hullpts, stack.data, sizeof(Point2f) * *nhullpts);
 
-    stackDestroy(stack);
+    stackFreeData(&stack);
     free(tmp);
 }
 

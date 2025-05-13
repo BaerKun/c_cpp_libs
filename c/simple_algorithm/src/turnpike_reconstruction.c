@@ -38,11 +38,15 @@ void RT_Insert(TreeNodePtr *const tree, const StackPtr stack, int left, const in
     if (end < left)
         left = end;
 
-    for (i = right + 1; i < end; i++)
-        bstInsertNode(tree, stackPop(stack));
+    for (i = right + 1; i < end; i++) {
+        bstInsertNode(tree, *stackTop(stack));
+        stackPop(stack);
+    }
 
-    for (i = 0; i < left; i++)
-        bstInsertNode(tree, stackPop(stack));
+    for (i = 0; i < left; i++) {
+        bstInsertNode(tree, *stackTop(stack));
+        stackPop(stack);
+    }
 }
 
 int reconstructTurnpikeBody(Package *package, const int left, const int right) {
@@ -78,12 +82,25 @@ int reconstructTurnpikeBody(Package *package, const int left, const int right) {
     return isSuccessful;
 }
 
+static TreeNodePtr buildBST(const DataType data[], const int len, TreeNode *const buffer) {
+    TreeNodePtr tree = NULL;
+    if (buffer == NULL) return NULL;
+
+    for (int i = 0; i < len; i++) {
+        buffer[i].data = data[i];
+        bstInsertNode(&tree, buffer + i);
+    }
+
+    return tree;
+}
+
 void reconstructTurnpike(DistanceType distances[], DistanceType points[], const int npts) {
     const int numOfDistances = npts * (npts - 1) / 2;
     const TreeNodePtr buffer = malloc(sizeof(TreeNode) * numOfDistances);
     TreeNodePtr tree = buildBST(distances, numOfDistances, buffer);
-    const StackPtr stack = newStack(numOfDistances);
-    Package package = (Package){&tree, points, stack, npts};
+    Stack stack;
+    stackInit(&stack, numOfDistances);
+    Package package = (Package){&tree, points, &stack, npts};
 
     points[0] = 0;
     points[npts - 1] = bstUnlinkMax(&tree)->data; // buffer，不用free单个节点
@@ -98,7 +115,7 @@ void reconstructTurnpike(DistanceType distances[], DistanceType points[], const 
 
     puts("reconstruct failed!");
 END:
-    stackDestroy(stack);
+    stackFreeData(&stack);
     free(buffer);
     free(tree);
 }

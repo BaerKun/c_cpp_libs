@@ -75,19 +75,3 @@ TreeNodePtr bstUnlinkWithData(TreeNodePtr *const root, const DataType data) {
     TreeNodePtr *const parent2child = bstFind(root, data);
     return bstUnlink(parent2child);
 }
-
-TreeNodePtr buildBST(const DataType data[], const int len, const TreeNodePtr buffer) {
-    TreeNodePtr tree = NULL;
-
-    if (buffer == NULL) {
-        for (int i = 0; i < len; i++)
-            bstInsertData(&tree, data[i]);
-    } else {
-        for (int i = 0; i < len; i++) {
-            buffer[i].data = data[i];
-            bstInsertNode(&tree, buffer + i);
-        }
-    }
-
-    return tree;
-}

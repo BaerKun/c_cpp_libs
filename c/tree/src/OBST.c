@@ -72,14 +72,14 @@ TreeNodePtr optimalBST(const DataType data[], const WeightType weight[], const i
     queueInit(&queue, (number + 1) / 2);
     enqueue(&queue, (LeftRight){0, number - 1});
 
-    LeftRight lr;
     while (queueEmpty(&queue)) {
-        dequeue(&queue, &lr);
-        left = lr.left;
-        right = lr.right;
+        const LeftRight *lr = queueFront(&queue);
+        left = lr->left;
+        right = lr->right;
+        dequeue(&queue);
+
         root = dp[left][right].root;
         const TreeNodePtr node = nodes[root];
-
         node->data = data[root];
         node->next = NULL;
 

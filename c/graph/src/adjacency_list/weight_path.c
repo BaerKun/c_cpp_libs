@@ -23,7 +23,7 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent, const VertexId
 
     while (heap.size) {
         const VertexId vertex = (VertexId) (*heapTop(&heap) - distance);
-        heapPop(&heap, NULL);
+        heapPop(&heap);
         if (vertex == target)
             return;
 
@@ -61,9 +61,9 @@ void weightedPath(const GraphPtr graph, VertexId *parent, const VertexId source)
     distance[source] = 0;
     isInQueue[source] = 1;
 
-    VertexId vertex;
     while (queue.size) {
-        dequeue(&queue, &vertex);
+        const VertexId vertex = *queueFront(&queue);
+        dequeue(&queue);
         isInQueue[vertex] = 0;
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {

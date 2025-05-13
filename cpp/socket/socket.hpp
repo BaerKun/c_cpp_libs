@@ -2,6 +2,7 @@
 #define CPP_LIBS_SOCKET_HPP
 
 #include <sys/socket.h>
+#include <memory>
 #include <string>
 
 enum class AddressFamily {
@@ -21,17 +22,17 @@ struct SocketAddress {
 };
 
 template<AddressFamily>
-class Socket {
+class Socket_ {
 public:
-    Socket() = default;
+    Socket_() = default;
 
-    Socket(const Socket &) = delete;
+    Socket_(const Socket_ &) = delete;
 
-    Socket(Socket &&) noexcept;
+    Socket_(Socket_ &&) noexcept;
 
-    explicit Socket(Protocol pr);
+    explicit Socket_(Protocol pr);
 
-    ~Socket()noexcept;
+    ~Socket_()noexcept;
 
     void close()noexcept;
 
@@ -54,7 +55,7 @@ public:
 
     void listen(int backlog) const;
 
-    std::shared_ptr<Socket> accept(SocketAddress *from = nullptr) const;
+    std::shared_ptr<Socket_> accept(SocketAddress *from = nullptr) const;
 
     void connect(const SocketAddress &addr) const;
 
@@ -67,10 +68,14 @@ private:
     int sockfd_{};
 };
 
-extern template class Socket<AddressFamily::IPv4>;
-extern template class Socket<AddressFamily::IPv6>;
-extern template class Socket<AddressFamily::LOCAL>;
+extern template class Socket_<AddressFamily::IPv4>;
+extern template class Socket_<AddressFamily::IPv6>;
+extern template class Socket_<AddressFamily::LOCAL>;
 
-#define createSocket(af, pr) Socket<af>(pr)
+template<AddressFamily af, Protocol pr>
+class Socket : public Socket_<af> {
+public:
+    Socket() : Socket_<af>(pr) {}
+};
 
 #endif //CPP_LIBS_SOCKET_HPP

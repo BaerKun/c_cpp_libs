@@ -1,7 +1,7 @@
 #ifndef TREE_BINARY_SEARCH_TREE_H
 #define TREE_BINARY_SEARCH_TREE_H
 
-#include <binary_tree.h>
+#include "binary_tree.h"
 
 // 输出 x < y
 #define GREATER(x, y) (x > y)
@@ -21,7 +21,5 @@ void bstInsertData(TreeNodePtr *root, DataType data);
 TreeNodePtr bstUnlink(TreeNodePtr *parent2child);
 
 TreeNodePtr bstUnlinkWithData(TreeNodePtr *root, DataType data);
-
-TreeNodePtr buildBST(const DataType data[], int len, TreeNodePtr buffer);
 
 #endif //TREE_BINARY_SEARCH_TREE_H

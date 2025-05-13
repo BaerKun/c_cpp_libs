@@ -4,19 +4,19 @@
 #include <stdio.h>
 
 void buildTopPath(const GraphPtr graph, VertexId parent[]) {
-    VertexId vertex;
     int counter = 0;
     int *indegree = malloc(graph->vertexNum * sizeof(int));
     Queue queue;
     queueInit(&queue, graph->vertexNum);
 
     InitIndegree(graph, indegree, &queue);
-    for (vertex = 0; vertex < graph->vertexNum; vertex++)
+    for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
         parent[vertex] = -1;
 
     while (queueEmpty(&queue)) {
-        counter++;
-        dequeue(&queue, &vertex);
+        const VertexId vertex = *queueFront(&queue);
+        dequeue(&queue);
+        ++counter;
 
         for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {
             const VertexId adjacentVertex = thisEdge->target;
@@ -42,9 +42,9 @@ void topSort(const GraphPtr graph, VertexId sortArray[]) {
     InitIndegree(graph, indegree, &queue);
 
     int counter = 0;
-    VertexId vertex;
     while (queueEmpty(&queue)) {
-        dequeue(&queue, &vertex);
+        const VertexId vertex = *queueFront(&queue);
+        dequeue(&queue);
         sortArray[counter++] = vertex;
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {

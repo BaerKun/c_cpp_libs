@@ -37,7 +37,7 @@ static void heapPercolateDown(const HeapPtr heap, const int top, const int last)
 }
 
 static inline void heapInit(const HeapPtr heap, const int capacity) {
-    heap->data = malloc(capacity * sizeof(HEAP_DATA_TYPE));
+    heap->data = (HEAP_DATA_TYPE *) malloc(capacity * sizeof(HEAP_DATA_TYPE));
     heap->prev = heap->data - 1;
     heap->size = 0;
     heap->capacity = capacity;
@@ -51,10 +51,7 @@ static void heapPush(const HeapPtr heap, HEAP_DATA_TYPE const data) {
     heap->prev[i] = data;
 }
 
-static inline void heapPop(const HeapPtr heap, HEAP_DATA_TYPE *const ptr) {
-    if(ptr)
-        *ptr = *heap->data;
-
+static inline void heapPop(const HeapPtr heap) {
     *heap->data = heap->prev[heap->size];
     heapPercolateDown(heap, 1, --heap->size);
 }
@@ -75,7 +72,7 @@ static void buildHeap(const HeapPtr heap, HEAP_DATA_TYPE *const data, const int 
     heap->data = data;
     heap->prev = data - 1;
     heap->capacity = heap->size = size;
-    for (int i = size >> 1; i; i--)
+    for (int i = size >> 1; i; --i)
         heapPercolateDown(heap, i, size);
 }
 

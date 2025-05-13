@@ -76,13 +76,14 @@ static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, cons
             if (arg.source != dst)
                 break;
 
-            if(stack.top == 0) {
+            if (stack.top == 0) {
                 success = 1;
                 break;
             }
 
             // 模拟函数返回
-            stackPop(&stack, &arg);
+            arg = *stackTop(&stack);
+            stackPop(&stack);
 
             dst = arg.source;
             continue;
@@ -91,7 +92,7 @@ static int EulerPath_stack(EdgePtr *availableEdges, const LinkNodePtr path, cons
 
         // 模拟函数调用
         stackPush(&stack, arg);
-        arg = (Argument) {arg.path->next, edge->target};
+        arg = (Argument){arg.path->next, edge->target};
     }
     stackFreeData(&stack);
     return success;
@@ -108,13 +109,13 @@ void EulerPath(const GraphPtr graph, const LinkNodePtr path, const VertexId src,
     path->next = NULL;
     path->data = src;
 
-    if(availableEdges == NULL)
+    if (availableEdges == NULL)
         return;
 
     if (!
-            //EulerPath_recursive(availableEdges, path, src, dst)
-            EulerPath_stack(availableEdges, path, src, dst, graph->edgeNum)
-            ) {
+        //EulerPath_recursive(availableEdges, path, src, dst)
+        EulerPath_stack(availableEdges, path, src, dst, graph->edgeNum)
+    ) {
         puts("EulerPath: No Solution!\n");
         nodeClear(&path->next);
     }

@@ -25,9 +25,7 @@ static inline void stackPush(const StackPtr stack, STACK_DATA_TYPE const data) {
     stack->data[++stack->top] = data;
 }
 
-static inline void stackPop(const StackPtr stack, STACK_DATA_TYPE *const ptr) {
-    if(ptr)
-        *ptr = stack->data[stack->top];
+static inline void stackPop(const StackPtr stack) {
     --stack->top;
 }
 

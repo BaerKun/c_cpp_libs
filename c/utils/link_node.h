@@ -45,11 +45,6 @@ static LinkNode **nodeFind(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE c
     return prev;
 }
 
-static LinkNodePtr NodeUnlinkWithData(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE const data) {
-    LinkNodePtr *prev = nodeFind(headNextPtr, data);
-    return *prev ? nodeUnlink(prev) : NULL;
-}
-
 static inline void nodeDelete(LinkNodePtr *const prevNextPtr) {
     free(nodeUnlink(prevNextPtr));
 }

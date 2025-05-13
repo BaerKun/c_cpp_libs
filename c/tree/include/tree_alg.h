@@ -1,7 +1,7 @@
 #ifndef TREE_ALG_H
 #define TREE_ALG_H
 
-#include <binary_search_tree.h>
+#include "binary_search_tree.h"
 
 typedef int DataType;
 typedef int WeightType;

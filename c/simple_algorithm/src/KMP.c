@@ -1,6 +1,5 @@
 #include <stdio.h>
-#include <string.h>
-#include "list.h"
+#include "link_node.h"
 
 // Partial Match Table, PMT
 void calcPMT(const char *pattern, int *pmt) {
@@ -16,15 +15,15 @@ void calcPMT(const char *pattern, int *pmt) {
     }
 }
 
-void KMP(const char *text, const char *pattern, const int *pmt, ListPtr *result) {
+void KMP(const char *text, const char *pattern, const int *pmt, LinkNode **result) {
     int i = 0, j = 0;
-    NodePtr node = NULL, next;
+    LinkNode *node = NULL;
 
     while (text[i]) {
         if (text[i] == pattern[j]) {
             ++i;
             if (!pattern[++j]) {
-                next = newNode(i - j);
+                LinkNode *next = newNode(i - j);
                 if (node == NULL)
                     *result = next;
                 else
@@ -43,18 +42,4 @@ void KMP(const char *text, const char *pattern, const int *pmt, ListPtr *result)
         node->next = NULL;
     else
         *result = NULL;
-}
-
-int main() {
-    ListPtr result;
-    char text[] = "https://www.google.com/search?q=%E7%BF%BB%E8%AF%91&oq=&gs_lcrp=EgZjaHJvbWUqCQgAECMYJxjqAjIJCAAQIxgnGOoCMgkIARAjGCcY6gIyCQgCECMYJxjqAjIJCAMQIxgnGOoCMgkIBBAjGCcY6gIyCQgFECMYJxjqAjIJCAYQIxgnGOoCMgkIBxAjGCcY6gLSAQkxMDEzajBqMTWoAgiwAgE&sourceid=chrome&ie=UTF-8";
-    char pattern[] = "www.google.com";
-    int pmt[sizeof(pattern) - 1];
-    calcPMT(pattern, pmt);
-    KMP(text, pattern, pmt, &result);
-    for (NodePtr node = result; node; node = node->next) {
-        printf("%d ", node->element);
-    }
-    list_destroy(result);
-    return 1;
 }

@@ -1,7 +1,7 @@
-#include "tree/trie_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tree_arg.h"
 
 #define STEAM_SIZE (1 << 14)
 

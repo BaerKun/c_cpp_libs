@@ -54,14 +54,17 @@ bool ThreadPool<QueueType>::isTaskOver() const {
  * 判断QueueType是否有full方法(c++17)
  * declval<T>()：返回一个仅用于类型推导的T的“实例”
  * decltype(V)：返回V的类型
- * std::void_t<T>：无论如何返回void，实现偏特化void
- * 若.full()编译失败，退化为通用模版
+ * std::void_t<T>：无论如何返回void
+ * 流程：
+ * has_full_method<QueueType, bool> // 第二个参数默认bool，特化继承主模板默认参数
+ * 进入特化模板，若编译通过，则存在has_full_method<QueueType, bool> = true
+ * 否则退化为通用模版
+ * 若不限定方法输出类型：主模板默认参数void，特化std::void_t<decltype(...)>
  */
-template<typename QueueType, typename = void>
+template<typename QueueType, typename = bool>
 static constexpr bool has_full_method = false;
 template<typename QueueType>
-static constexpr bool has_full_method<QueueType, 
-    std::void_t<decltype(std::declval<QueueType>().full())>> = true;
+static constexpr bool has_full_method<QueueType, decltype(std::declval<QueueType>().full())> = true;
 
 template<typename QueueType>
 bool ThreadPool<QueueType>::isQueueFull() const {

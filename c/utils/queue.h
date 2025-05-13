@@ -30,9 +30,7 @@ static inline void enqueue(const QueuePtr queue, QUEUE_DATA_TYPE const element){
     ++queue->size;
 }
 
-static inline void dequeue(const QueuePtr queue, QUEUE_DATA_TYPE * const ptr){
-    if(ptr)
-        *ptr = queue->data[queue->front];
+static inline void dequeue(const QueuePtr queue){
     if(++queue->front == queue->capacity)
         queue->front = 0;
     --queue->size;

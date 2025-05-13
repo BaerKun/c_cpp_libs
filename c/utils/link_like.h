@@ -36,16 +36,6 @@ static inline LINK_NODE_DATA_TYPE *linkTop(const LinkLike *const link) {
     return &link->head->data;
 }
 
-static void linkFilter(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
-    const LinkNodePtr node = NodeUnlinkWithData(&link->head, data);
-    if (node == NULL)
-        return;
-
-    free(node);
-    if (link->head == NULL)
-        link->tail = &link->head;
-}
-
 static inline void linkEnqueue(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
     const LinkNodePtr node = newNode(data);
     *link->tail = node;

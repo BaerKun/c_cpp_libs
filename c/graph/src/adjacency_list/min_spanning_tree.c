@@ -17,14 +17,13 @@ static void printTreeHelper(const VertexPtr vertices, VertexId parent[], const V
 }
 
 void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId root) {
-    VertexId vertex;
     char *hasKnown = malloc(graph->vertexNum);
     int *minWeight = malloc(graph->vertexNum * sizeof(int));
     Heap heap;
     heapInit(&heap, graph->vertexNum);
     parent[root] = root;
 
-    for (vertex = 0; vertex < graph->vertexNum; vertex++) {
+    for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
         hasKnown[vertex] = 0;
         minWeight[vertex] = WIGHT_MAX;
     }
@@ -32,8 +31,8 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[], const VertexId
     heapPush(&heap, minWeight + root);
 
     while (heap.size) {
-        vertex = (VertexId) (*heapTop(&heap) - minWeight);
-        heapPop(&heap, NULL);
+        const VertexId vertex = (VertexId)(*heapTop(&heap) - minWeight);
+        heapPop(&heap);
         hasKnown[vertex] = 1;
 
         for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {

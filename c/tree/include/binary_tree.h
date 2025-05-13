@@ -1,7 +1,7 @@
 #ifndef TREE_BINARY_TREE_H
 #define TREE_BINARY_TREE_H
 
-#include <tree.h>
+#include "tree.h"
 
 TreeNodePtr btUnlink(TreeNodePtr *parent2child, TreeNodePtr (*if2children)(TreeNodePtr *));
 

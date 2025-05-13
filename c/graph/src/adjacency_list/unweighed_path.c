@@ -2,16 +2,16 @@
 #include "queue.h"
 
 void buildUnweightedPath(const GraphPtr graph, VertexId *parent, const VertexId source, const VertexId target) {
-    VertexId vertex;
     Queue queue;
     queueInit(&queue, graph->vertexNum);
 
-    for(vertex = 0; vertex < graph->vertexNum; vertex++)
+    for(VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
         parent[vertex] = -1;
 
     enqueue(&queue, source);
     while (queueEmpty(&queue)) {
-        dequeue(&queue, &vertex);
+        const VertexId vertex = *queueFront(&queue);
+        dequeue(&queue);
 
         for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
             const VertexId adjacentVertex = edge->target;

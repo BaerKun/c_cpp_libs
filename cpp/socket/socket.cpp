@@ -74,7 +74,7 @@ static void getWhereFrom(SocketAddress *from, sockaddr *addr) noexcept {
 }
 
 template<AddressFamily AF>
-Socket<AF>::Socket(const Protocol pr) {
+Socket_<AF>::Socket_(const Protocol pr) {
     sockfd_ = socket(static_cast<int>(AF), static_cast<int>(pr), 0);
     if (sockfd_ == -1) {
         throw std::runtime_error("socket() failed");
@@ -82,7 +82,7 @@ Socket<AF>::Socket(const Protocol pr) {
 }
 
 template<AddressFamily AF>
-Socket<AF>::Socket(Socket &&other) noexcept {
+Socket_<AF>::Socket_(Socket_ &&other) noexcept {
     sockfd_ = other.sockfd_;
     other.sockfd_ = -1;
 }
@@ -95,17 +95,17 @@ static void closeSock(int &fd) noexcept {
 }
 
 template<AddressFamily AF>
-void Socket<AF>::close() noexcept {
+void Socket_<AF>::close() noexcept {
     closeSock(sockfd_);
 }
 
 template<AddressFamily AF>
-Socket<AF>::~Socket() noexcept {
+Socket_<AF>::~Socket_() noexcept {
     closeSock(sockfd_);
 }
 
 template<AddressFamily AF>
-void Socket<AF>::bind(const SocketAddress &addr) const {
+void Socket_<AF>::bind(const SocketAddress &addr) const {
     constexpr socklen_t len = SOCK_ADDR_SIZE<AF>;
     sockaddr *sockAddr = getSockAddr<AF>(addr);
     const int flag = ::bind(sockfd_, sockAddr, len);
@@ -116,7 +116,7 @@ void Socket<AF>::bind(const SocketAddress &addr) const {
 }
 
 template<AddressFamily AF>
-void Socket<AF>::sendto(const void *const data, const size_t size, const SocketAddress &addr) const {
+void Socket_<AF>::sendto(const void *const data, const size_t size, const SocketAddress &addr) const {
     constexpr socklen_t len = SOCK_ADDR_SIZE<AF>;
     sockaddr *sockAddr = getSockAddr<AF>(addr);
     const ssize_t flag = ::sendto(sockfd_, data, size, 0, sockAddr, len);
@@ -127,7 +127,7 @@ void Socket<AF>::sendto(const void *const data, const size_t size, const SocketA
 }
 
 template<AddressFamily AF>
-size_t Socket<AF>::recvfrom(void *const buff, const size_t size, SocketAddress *const from) const {
+size_t Socket_<AF>::recvfrom(void *const buff, const size_t size, SocketAddress *const from) const {
     socklen_t len = SOCK_ADDR_SIZE<AF>;
     sockaddr *addr = getSockAddrBuff<AF>();
 
@@ -143,14 +143,14 @@ size_t Socket<AF>::recvfrom(void *const buff, const size_t size, SocketAddress *
 }
 
 template<AddressFamily AF>
-void Socket<AF>::listen(const int backlog) const {
+void Socket_<AF>::listen(const int backlog) const {
     if (::listen(sockfd_, backlog) != 0) {
         throw std::runtime_error("listen() failed");
     }
 }
 
 template<AddressFamily AF>
-std::shared_ptr<Socket<AF> > Socket<AF>::accept(SocketAddress *const from) const {
+std::shared_ptr<Socket_<AF> > Socket_<AF>::accept(SocketAddress *const from) const {
     socklen_t len = SOCK_ADDR_SIZE<AF>;
     sockaddr *addr = getSockAddrBuff<AF>();
     const int fd = ::accept(sockfd_, addr, &len);
@@ -162,13 +162,13 @@ std::shared_ptr<Socket<AF> > Socket<AF>::accept(SocketAddress *const from) const
     getWhereFrom<AF>(from, addr);
     std::free(addr);
 
-    const auto client = std::make_shared<Socket>();
+    const auto client = std::make_shared<Socket_>();
     client->sockfd_ = fd;
     return client;
 }
 
 template<AddressFamily AF>
-void Socket<AF>::connect(const SocketAddress &addr) const {
+void Socket_<AF>::connect(const SocketAddress &addr) const {
     constexpr socklen_t len = SOCK_ADDR_SIZE<AF>;
     sockaddr *sockAddr = getSockAddr<AF>(addr);
     const int flag = ::connect(sockfd_, sockAddr, len);
@@ -192,7 +192,7 @@ static void sockSend(const int fd, const uint8_t *const ptr, const size_t size) 
 }
 
 template<AddressFamily AF>
-void Socket<AF>::send(const void *const data, const size_t size) const {
+void Socket_<AF>::send(const void *const data, const size_t size) const {
     sockSend(sockfd_, static_cast<const uint8_t *>(data), size);
 }
 
@@ -210,10 +210,10 @@ static size_t sockRecv(const int fd, uint8_t *const ptr, const size_t size) {
 }
 
 template<AddressFamily AF>
-size_t Socket<AF>::recv(void *const buff, const size_t size) const {
+size_t Socket_<AF>::recv(void *const buff, const size_t size) const {
     return sockRecv(sockfd_, static_cast<uint8_t *>(buff), size);
 }
 
-template class Socket<AddressFamily::IPv4>;
-template class Socket<AddressFamily::IPv6>;
-template class Socket<AddressFamily::LOCAL>;
+template class Socket_<AddressFamily::IPv4>;
+template class Socket_<AddressFamily::IPv6>;
+template class Socket_<AddressFamily::LOCAL>;

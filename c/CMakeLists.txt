@@ -5,7 +5,7 @@ project(c_libs)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-include_directories(utils)
+include_directories(utils ../share)
 add_subdirectory(utils)
 add_subdirectory(tree)
 add_subdirectory(graph)

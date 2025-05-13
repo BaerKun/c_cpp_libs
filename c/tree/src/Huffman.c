@@ -27,11 +27,12 @@ TreeNodePtr HuffmanCode(const DataType data[], const WeightType weight[], const 
     buildHeap(&heap, heapData, number);
 
     TreeNodePtr root = NULL;
-    HeapData minCost;
+
     while (heap.size > 1) {
         // 弹出heap的top2，作为root的left/right，然后将root重新入堆，root的weight为left、right之和
         // 这里合并了弹出right和插入root
-        heapPop(&heap, &minCost);
+        const HeapData minCost = *heapTop(&heap);
+        heapPop(&heap);
 
         root = treeNewNode(NO_DATA);
         root->left = minCost.node;

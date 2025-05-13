@@ -1,13 +1,12 @@
 #include <stdlib.h>
-#include <time.h>
-#include <random.h>
-#include <node.h>
+#include "link_node.h"
+#include "random.h"
 
 #define NUM_OF_PLACES 222   // 地点数量
 #define MAX_WORK_TIME 8.5   // 最大工作时间
 #define INIT_PHEROMONE 0.1f // 初始信息素
 
-typedef Node Path;
+typedef LinkNode Path;
 
 float dency = 0.1f; // 挥发率
 float alpha = 1.0f;
@@ -34,7 +33,7 @@ void init() {
 
 int haveVisited(Path *head, int place) {
     while (head != NULL) {
-        if (head->element == place)
+        if (head->data == place)
             return 1;
         head = head->next;
     }
@@ -78,34 +77,32 @@ void update(Path *head, float totalTime) {
             *target = head->next;
 
     while (target != NULL) {
-        pheromone[source->element][target->element] *= 1.f - dency;
-        pheromone[source->element][target->element] += 1.f / totalTime;
-        trendency[source->element][target->element] =
-                alpha * pheromone[source->element][target->element] / moveTime[source->element][target->element];
+        pheromone[source->data][target->data] *= 1.f - dency;
+        pheromone[source->data][target->data] += 1.f / totalTime;
+        trendency[source->data][target->data] =
+                alpha * pheromone[source->data][target->data] / moveTime[source->data][target->data];
         source = target;
         target = target->next;
     }
 }
 
 void antColony(int nants) {
-    float totalTime;
-    int source, target;
-    Path head, *path;
+    Path head;
     char *mask = malloc(nplaces);
 
     while (nants-- > 0) {
         // 随机出发点
-        source = randint(0, nplaces);
+        int source = randint(0, nplaces);
 
-        head.element = source;
+        head.data = source;
         head.next = NULL;
-        path = &head;
+        Path *path = &head;
 
-        totalTime = workTime[source];
+        float totalTime = workTime[source];
 
         while (1) {
             // 选择下一个点
-            target = chooseTarget(&head, source, totalTime, mask);
+            int target = chooseTarget(&head, source, totalTime, mask);
 
             // 没有可行路径
             if (target == -1)
@@ -128,14 +125,14 @@ void antColony(int nants) {
     free(mask);
 }
 
+/*
 int main() {
-    /*
-     * 换算、导入数据 moveTime/workTime
-     * 设置dency/alpha ...
-     */
+    // 换算、导入数据 moveTime/workTime
+    // 设置dency/alpha ...
 
     init();
     antColony(666);
 
     // 后续筛选...
 }
+*/
