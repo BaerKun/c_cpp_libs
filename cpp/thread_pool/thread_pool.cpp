@@ -15,9 +15,8 @@
  *  atomic用于原子操作，功能上相当于封装了lock和unlock，但底层逻辑更快
  */
 
-template<typename QueueType>
-ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber)
-    : threads_(threadsNumber), unfinishedTask_(0), shouldQuit_(false) {
+ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
+        : threads_(threadsNumber), unfinishedTask_(0), queueSize_(taskQueueSize), shouldQuit_(false) {
     for (int id = 0; id < threadsNumber; ++id) {
         threads_[id] = std::thread([this, id]() {
             while (true) {
@@ -33,7 +32,7 @@ ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber)
                 taskQueue_.pop();
                 lock.unlock();
 
-                task(TaskState::NORMAL, id);
+                task(TaskStatus::NORMAL, id);
 
                 lock.lock();
                 --unfinishedTask_;
@@ -45,36 +44,7 @@ ThreadPool<QueueType>::ThreadPool(const unsigned threadsNumber)
     }
 }
 
-template<typename QueueType>
-bool ThreadPool<QueueType>::isTaskOver() const {
-    return unfinishedTask_ == 0;
-}
-
-/*
- * 判断QueueType是否有full方法(c++17)
- * declval<T>()：返回一个仅用于类型推导的T的“实例”
- * decltype(V)：返回V的类型
- * std::void_t<T>：无论如何返回void
- * 流程：
- * has_full_method<QueueType, bool> // 第二个参数默认bool，特化继承主模板默认参数
- * 进入特化模板，若编译通过，则存在has_full_method<QueueType, bool> = true
- * 否则退化为通用模版
- * 若不限定方法输出类型：主模板默认参数void，特化std::void_t<decltype(...)>
- */
-template<typename QueueType, typename = bool>
-static constexpr bool has_full_method = false;
-template<typename QueueType>
-static constexpr bool has_full_method<QueueType, decltype(std::declval<QueueType>().full())> = true;
-
-template<typename QueueType>
-bool ThreadPool<QueueType>::isQueueFull() const {
-    if constexpr (has_full_method<QueueType>)
-        return taskQueue_.full();
-    return false;
-}
-
-template<typename QueueType>
-void ThreadPool<QueueType>::pushTask(const Task &task, const bool force) {
+void ThreadPool::pushTask(const Task &task, const bool force) {
     mutex_.lock();
     if (isQueueFull()) {
         if (!force) {
@@ -87,7 +57,7 @@ void ThreadPool<QueueType>::pushTask(const Task &task, const bool force) {
         taskQueue_.push(task);
         mutex_.unlock();
 
-        front(TaskState::REJECTED, -1);
+        front(TaskStatus::REJECTED, -1);
         return;
     }
 
@@ -98,8 +68,7 @@ void ThreadPool<QueueType>::pushTask(const Task &task, const bool force) {
     taskJoin_.notify_one();
 }
 
-template<typename QueueType>
-void ThreadPool<QueueType>::pushTask(Task &&task, const bool force) {
+void ThreadPool::pushTask(Task &&task, const bool force) {
     mutex_.lock();
     if (isQueueFull()) {
         if (force) {
@@ -117,11 +86,10 @@ void ThreadPool<QueueType>::pushTask(Task &&task, const bool force) {
     taskJoin_.notify_one();
 }
 
-template<typename QueueType>
-bool ThreadPool<QueueType>::waitTaskOver(const int ms) {
+bool ThreadPool::waitTaskOver(const int ms) {
     std::unique_lock<std::mutex> lock(mutex_);
 
-    if (isTaskOver())
+    if (allTaskOver())
         return true;
 
     if (ms == 0)
@@ -130,15 +98,14 @@ bool ThreadPool<QueueType>::waitTaskOver(const int ms) {
     if (ms > 0) {
         // 作用和wait类似，但多了一个时间限制；
         // 返回 线程被唤醒&&条件为true&&未超时；
-        return taskOver_.wait_for(lock, std::chrono::milliseconds(ms), [this]() { return isTaskOver(); });
+        return taskOver_.wait_for(lock, std::chrono::milliseconds(ms), [this]() { return allTaskOver(); });
     }
 
-    taskOver_.wait(lock, [this]() { return isTaskOver(); });
+    taskOver_.wait(lock, [this]() { return allTaskOver(); });
     return true;
 }
 
-template<typename QueueType>
-void ThreadPool<QueueType>::runTask() {
+void ThreadPool::runTask() {
     mutex_.lock();
     if (taskQueue_.empty() || shouldQuit_) {
         mutex_.unlock();
@@ -149,7 +116,7 @@ void ThreadPool<QueueType>::runTask() {
     taskQueue_.pop();
     mutex_.unlock();
 
-    task(TaskState::MAIN, -1);
+    task(TaskStatus::MAIN, -1);
 
     mutex_.lock();
     --unfinishedTask_;
@@ -158,8 +125,7 @@ void ThreadPool<QueueType>::runTask() {
     taskOver_.notify_all();
 }
 
-template<typename QueueType>
-ThreadPool<QueueType>::~ThreadPool() {
+ThreadPool::~ThreadPool() {
     mutex_.lock();
     shouldQuit_ = true;
     mutex_.unlock();
@@ -167,43 +133,4 @@ ThreadPool<QueueType>::~ThreadPool() {
     taskJoin_.notify_all();
     for (auto &t: threads_)
         t.join();
-}
-
-template<unsigned QueueSize>
-void FixedTaskQueue<QueueSize>::push(const Task &task) {
-    queue_[tail_] = task;
-    ++size_;
-    if (++tail_ == QueueSize)
-        tail_ = 0;
-}
-
-template<unsigned QueueSize>
-void FixedTaskQueue<QueueSize>::push(Task &&task) {
-    queue_[tail_] = std::move(task);
-    ++size_;
-    if (++tail_ == QueueSize)
-        tail_ = 0;
-}
-
-template<unsigned QueueSize>
-const Task &FixedTaskQueue<QueueSize>::front() {
-    return queue_[head_];
-}
-
-template<unsigned QueueSize>
-void FixedTaskQueue<QueueSize>::pop() {
-    queue_[head_].~Task();
-    --size_;
-    if (++head_ == QueueSize)
-        head_ = 0;
-}
-
-template<unsigned QueueSize>
-bool FixedTaskQueue<QueueSize>::empty() const {
-    return size_ == 0;
-}
-
-template<unsigned QueueSize>
-bool FixedTaskQueue<QueueSize>::full() const {
-    return size_ == QueueSize;
 }
