@@ -1,5 +1,5 @@
-#ifndef LINEAR_H
-#define LINEAR_H
+#ifndef LINEAR_HPP
+#define LINEAR_HPP
 
 #include <vector>
 #include <Eigen/Core>
@@ -7,16 +7,16 @@
 namespace OR {
     enum Optim { Maximize, Minimize };
 
-    enum CompareSymbol { Equal, LessEqual, GreaterEqual };
+    enum Comparison { EQUAL, LESS_EQUAL, GREATER_EQUAL };
 
     template<int Dims>
     constexpr int DIMS_MINUS_ONE = Dims == Eigen::Dynamic ? Eigen::Dynamic : Dims - 1;
 
     template<typename T>
     struct Constraint {
-        Eigen::RowVectorX<T> coeffs; // coefficient 系数
-        CompareSymbol symbol;
-        T rhs; // Right-hand Side 即 b
+        Eigen::RowVectorX<T> coeffs{}; // coefficients 系数
+        Comparison comp{};
+        T rhs; // right-hand Side 即 b
     };
 
     /*
@@ -24,11 +24,11 @@ namespace OR {
      * b >= 0
      */
     template<typename T>
-    class LinearProblem {
+    class LinearProgram {
     public:
-        using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using SimplexTableau = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-        LinearProblem() = default;
+        LinearProgram() = default;
 
         void setObjective(const Eigen::RowVectorX<T> &objective) {
             objective_ = objective;
@@ -46,8 +46,8 @@ namespace OR {
             constraints_.push_back(std::move(constraint));
         }
 
-        const Matrix &getSimplexMatrix() {
-            return stdf_;
+        const SimplexTableau &getSimplexTableau() const {
+            return tableau_;
         }
 
         bool solve(Eigen::VectorX<T> &x, T &f);
@@ -55,30 +55,30 @@ namespace OR {
     private:
         Eigen::RowVectorX<T> objective_;
         std::vector<Constraint<T> > constraints_;
-        Matrix stdf_;
+        SimplexTableau tableau_;
     };
 
     /*
-     * stdf = [ A  b
-     *          c -Z ]
+     * tableau = [ A  b
+     *             c -Z ]
      * b >= 0
      */
     template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool simplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &stdf,
+    bool simplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
                        Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
                        Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f);
 
     /*
-     * stdf = [ A  b
-     *          c -Z ]
+     * tableau = [ A  b
+     *             c -Z ]
      * c <= 0 (Max) or c >= 0 (Min)
      */
     template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool dualSimplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &stdf,
+    bool dualSimplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
                            Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
                            Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f);
 }
 
 #include "linear.tpp"
 
-#endif //LINEAR_H
+#endif //LINEAR_HPP
