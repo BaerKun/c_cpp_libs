@@ -5,25 +5,28 @@
 #include <Eigen/Core>
 
 namespace OR {
-    enum Optim { Maximize, Minimize };
+    enum Optim {
+        Maximize, Minimize
+    };
 
-    enum Comparison { EQUAL, LESS_EQUAL, GREATER_EQUAL };
+    enum Comparison {
+        LESS_EQUAL = -1, EQUAL = 0, GREATER_EQUAL = 1
+    };
 
     template<int Dims>
     constexpr int DIMS_MINUS_ONE = Dims == Eigen::Dynamic ? Eigen::Dynamic : Dims - 1;
 
-    template<typename T>
+    template<typename T=float>
     struct Constraint {
-        Eigen::RowVectorX<T> coeffs{}; // coefficients 系数
+        Eigen::RowVectorX<T> coeff{}; // coefficients 系数
         Comparison comp{};
         T rhs; // right-hand Side 即 b
     };
 
     /*
      * only Max
-     * b >= 0
      */
-    template<typename T>
+    template<typename T=float>
     class LinearProgram {
     public:
         using SimplexTableau = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -39,10 +42,20 @@ namespace OR {
         }
 
         void addConstraint(const Constraint<T> &constraint) {
-            constraints_.push_back(constraint);
+            if (constraint.rhs >= 0)
+                constraints_.push_back(constraint);
+            else
+                constraints_.push_back({-constraint.coeff,
+                                        static_cast<Comparison>(-constraint.comp),
+                                        -constraint.rhs});
         }
 
         void addConstraint(Constraint<T> &&constraint) {
+            if (constraint.rhs < 0) {
+                constraint.coeff = -constraint.coeff;
+                constraint.comp = static_cast<Comparison>(-constraint.comp);
+                constraint.rhs = -constraint.rhs;
+            }
             constraints_.push_back(std::move(constraint));
         }
 
@@ -57,6 +70,12 @@ namespace OR {
         std::vector<Constraint<T> > constraints_;
         SimplexTableau tableau_;
     };
+
+    extern template
+    class LinearProgram<float>;
+
+    extern template
+    class LinearProgram<double>;
 
     /*
      * tableau = [ A  b
