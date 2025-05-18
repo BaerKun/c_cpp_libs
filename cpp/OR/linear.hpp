@@ -3,23 +3,13 @@
 
 #include <vector>
 #include <Eigen/Core>
+#include "share.hpp"
 
 namespace OR {
-    enum Optim {
-        Maximize, Minimize
-    };
-
-    enum Comparison {
-        LESS_EQUAL = -1, EQUAL = 0, GREATER_EQUAL = 1
-    };
-
-    template<int Dims>
-    constexpr int DIMS_MINUS_ONE = Dims == Eigen::Dynamic ? Eigen::Dynamic : Dims - 1;
-
     template<typename T=float>
     struct Constraint {
         Eigen::RowVectorX<T> coeff{}; // coefficients 系数
-        Comparison comp{};
+        int comp{};
         T rhs; // right-hand Side 即 b
     };
 
@@ -45,30 +35,32 @@ namespace OR {
             if (constraint.rhs >= 0)
                 constraints_.push_back(constraint);
             else
-                constraints_.push_back({-constraint.coeff,
-                                        static_cast<Comparison>(-constraint.comp),
-                                        -constraint.rhs});
+                constraints_.push_back({
+                    -constraint.coeff,
+                    -constraint.comp,
+                    -constraint.rhs
+                });
         }
 
         void addConstraint(Constraint<T> &&constraint) {
             if (constraint.rhs < 0) {
                 constraint.coeff = -constraint.coeff;
-                constraint.comp = static_cast<Comparison>(-constraint.comp);
+                constraint.comp = -constraint.comp;
                 constraint.rhs = -constraint.rhs;
             }
             constraints_.push_back(std::move(constraint));
         }
 
-        const SimplexTableau &getSimplexTableau() const {
+        [[nodiscard]] const SimplexTableau &getSimplexTableau() const {
             return tableau_;
         }
 
         bool solve(Eigen::VectorX<T> &x, T &f);
 
     private:
-        Eigen::RowVectorX<T> objective_;
-        std::vector<Constraint<T> > constraints_;
-        SimplexTableau tableau_;
+        Eigen::RowVectorX<T> objective_{};
+        std::vector<Constraint<T> > constraints_{};
+        SimplexTableau tableau_{};
     };
 
     extern template

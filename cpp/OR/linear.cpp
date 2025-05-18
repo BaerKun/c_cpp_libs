@@ -61,7 +61,6 @@ namespace OR {
         // 直接单纯形法
         if (numArtificialVar == 0) {
             objCoeff.head(numObjVar) = objective_;
-            std::cout << tableau_  << std::endl;
             if (!simplexMethod<Maximize>(tableau_, basic, var, f)) return false;
             x = var.head(numObjVar);
             return true;
@@ -76,7 +75,7 @@ namespace OR {
         }
 
         if (!simplexMethod<Minimize>(tableau_, basic, var, f)) return false;
-        if (f > EPSILON<T>) return false;
+        if (f >= EPSILON<T>) return false;
 
         // 第二阶段
         tableau_.col(numObjAndSlackVar) = rhs; // 复制rhs，防止resize后丢失

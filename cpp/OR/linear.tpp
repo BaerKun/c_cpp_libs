@@ -4,9 +4,6 @@
 #include "linear.hpp"
 
 namespace OR {
-    template<typename T>
-    constexpr T EPSILON = std::numeric_limits<T>::epsilon() * 100;
-
     template<int Optim, typename T, int Rows, int Cols, int Major>
     bool simplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
                        Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
