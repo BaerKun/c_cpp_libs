@@ -74,20 +74,20 @@ namespace OR {
      *             c -Z ]
      * b >= 0
      */
-    template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool simplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
-                       Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
-                       Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f);
+    template<int Optim, typename T, int Major>
+    bool simplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+                       Eigen::VectorX<Eigen::Index> &basic,
+                       Eigen::VectorX<T> &x, T &f);
 
     /*
      * tableau = [ A  b
      *             c -Z ]
      * c <= 0 (Max) or c >= 0 (Min)
      */
-    template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool dualSimplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
-                           Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
-                           Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f);
+    template<int Optim, typename T, int Major>
+    bool dualSimplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+                           Eigen::VectorX<Eigen::Index> &basic,
+                           Eigen::VectorX<T> &x, T &f);
 }
 
 #include "linear.tpp"

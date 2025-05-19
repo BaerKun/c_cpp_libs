@@ -4,10 +4,10 @@
 #include <Eigen/Core>
 
 namespace OR {
-    template<int Optim, typename T, int Rows, int Cols, int Major>
-    void TransportationSimplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &cost,
-                                     Eigen::Vector<T, Rows> &supply, Eigen::Vector<T, Cols> &demand,
-                                     Eigen::Matrix<T, Rows, Cols, Major> &x, T &f);
+    template<int Optim, typename T>
+    void TransportationSimplexMethod(Eigen::MatrixX<T> &cost,
+                                     Eigen::VectorX<T> &supply, Eigen::RowVectorX<T> &demand,
+                                     Eigen::MatrixX<T> &x, T &f);
 }
 
 #include "transport.tpp"

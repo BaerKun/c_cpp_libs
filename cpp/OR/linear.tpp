@@ -4,12 +4,12 @@
 #include "linear.hpp"
 
 namespace OR {
-    template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool simplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
-                       Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
-                       Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f) {
-        auto rhs = tableau.col(x.rows()).head(basic.rows());
-        auto objCoeff = tableau.row(rhs.rows()).head(x.rows());
+    template<int Optim, typename T, int Major>
+    bool simplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+                       Eigen::VectorX<Eigen::Index> &basic,
+                       Eigen::VectorX<T> &x, T &f) {
+        auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
+        auto objCoeff = tableau.row(rhs.rows()).head(tableau.cols() - 1);
 
         for (Eigen::Index iter = 0; iter < tableau.rows(); ++iter) {
             // choose max/min objective coefficient (c)
@@ -17,7 +17,7 @@ namespace OR {
             if (Optim == Maximize
                     ? objCoeff.maxCoeff(&entering) <= EPSILON<T>
                     : objCoeff.minCoeff(&entering) >= -EPSILON<T>) {
-                x.setZero();
+                x = Eigen::VectorX<T>::Zero(objCoeff.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
                     x(basic(r)) = rhs(r);
                 }
@@ -54,18 +54,18 @@ namespace OR {
         return false;
     }
 
-    template<int Optim, typename T, int Rows, int Cols, int Major>
-    bool dualSimplexMethod(Eigen::Matrix<T, Rows, Cols, Major> &tableau,
-                           Eigen::Vector<Eigen::Index, DIMS_MINUS_ONE<Rows> > &basic,
-                           Eigen::Vector<T, DIMS_MINUS_ONE<Cols> > &x, T &f) {
-        auto rhs = tableau.col(x.rows()).head(basic.rows());
-        auto objCoeff = tableau.row(rhs.rows()).head(x.rows());
+    template<int Optim, typename T, int Major>
+    bool dualSimplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+                           Eigen::VectorX<Eigen::Index> &basic,
+                           Eigen::VectorX<T> &x, T &f) {
+        auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
+        auto objCoeff = tableau.row(rhs.rows()).head(tableau.cols() - 1);
 
         for (Eigen::Index i = 0; i < tableau.rows(); ++i) {
             // choose min rhs(b)
             Eigen::Index leaving;
             if (rhs.minCoeff(&leaving) >= -EPSILON<T>) {
-                x.setZero();
+                x = Eigen::VectorX<T>::Zero(objCoeff.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
                     x(basic(r)) = rhs(r);
                 }
