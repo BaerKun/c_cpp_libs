@@ -19,7 +19,7 @@ namespace OR {
     template<typename T=float>
     class LinearProgram {
     public:
-        using SimplexTableau = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using SimplexTableau = DynamicMatrix<T, Eigen::RowMajor>;
 
         LinearProgram() = default;
 
@@ -75,7 +75,7 @@ namespace OR {
      * b >= 0
      */
     template<int Optim, typename T, int Major>
-    bool simplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+    bool simplexMethod(DynamicMatrix<T, Major> &tableau,
                        Eigen::VectorX<Eigen::Index> &basic,
                        Eigen::VectorX<T> &x, T &f);
 
@@ -85,7 +85,7 @@ namespace OR {
      * c <= 0 (Max) or c >= 0 (Min)
      */
     template<int Optim, typename T, int Major>
-    bool dualSimplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+    bool dualSimplexMethod(DynamicMatrix<T, Major> &tableau,
                            Eigen::VectorX<Eigen::Index> &basic,
                            Eigen::VectorX<T> &x, T &f);
 }

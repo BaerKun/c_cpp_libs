@@ -37,7 +37,7 @@ namespace OR {
             row.head(numObjVar) = constr.coeff;
             rhs(r) = constr.rhs;
 
-            Eigen::Index entering;
+            Eigen::Index entering = -1;
             switch (constr.comp) {
                 case EQUAL:
                     entering = artificialIdx++;
@@ -56,11 +56,11 @@ namespace OR {
         }
 
         Eigen::VectorX<T> var(totalVar);
-        auto objCoeff = tableau_.row(numConstr);
+        auto reducedCost = tableau_.row(numConstr);
 
         // 直接单纯形法
         if (numArtificialVar == 0) {
-            objCoeff.head(numObjVar) = objective_;
+            reducedCost.head(numObjVar) = objective_;
             if (!simplexMethod<Maximize>(tableau_, basic, var, f)) return false;
             x = var.head(numObjVar);
             return true;
@@ -68,10 +68,10 @@ namespace OR {
 
         // 两阶段法
         // 第一阶段：Minimize sum(artificial)
-        objCoeff.segment(numObjAndSlackVar, numArtificialVar).setOnes();
+        reducedCost.segment(numObjAndSlackVar, numArtificialVar).setOnes();
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
             if (basic[i] >= numObjAndSlackVar)
-                objCoeff -= tableau_.row(i);
+                reducedCost -= tableau_.row(i);
         }
 
         if (!simplexMethod<Minimize>(tableau_, basic, var, f)) return false;
@@ -81,13 +81,13 @@ namespace OR {
         tableau_.col(numObjAndSlackVar) = rhs; // 复制rhs，防止resize后丢失
         tableau_.conservativeResize(numConstr + 1, numObjAndSlackVar + 1); // 重新分配内存，并保留部分原有数据
 
-        auto objCoeff2 = tableau_.row(numConstr); // Block不能重新引用，必须声明新变量
-        objCoeff2.head(numObjVar) = objective_;
-        objCoeff2.segment(numObjVar, numSlackVar + 1).setZero();
+        auto reducedCost2 = tableau_.row(numConstr); // Block不能重新引用，必须声明新变量
+        reducedCost2.head(numObjVar) = objective_;
+        reducedCost2.segment(numObjVar, numSlackVar + 1).setZero();
 
         for (Eigen::Index i = 0; i < basic.size(); ++i) {
             if (const Eigen::Index b = basic(i); b < numObjVar)
-                objCoeff2 -= tableau_.row(i) * objective_(b);
+                reducedCost2 -= tableau_.row(i) * objective_(b);
         }
 
         var.resize(numObjAndSlackVar);

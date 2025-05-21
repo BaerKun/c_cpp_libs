@@ -5,23 +5,23 @@
 
 namespace OR {
     template<int Optim, typename T, int Major>
-    bool simplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+    bool simplexMethod(DynamicMatrix<T, Major> &tableau,
                        Eigen::VectorX<Eigen::Index> &basic,
                        Eigen::VectorX<T> &x, T &f) {
         auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
-        auto objCoeff = tableau.row(rhs.rows()).head(tableau.cols() - 1);
+        auto reducedCost = tableau.row(rhs.rows()).head(tableau.cols() - 1); // 检验数
 
         for (Eigen::Index iter = 0; iter < tableau.rows(); ++iter) {
             // choose max/min objective coefficient (c)
             Eigen::Index entering; // 入基变量
             if (Optim == Maximize
-                    ? objCoeff.maxCoeff(&entering) <= EPSILON<T>
-                    : objCoeff.minCoeff(&entering) >= -EPSILON<T>) {
-                x = Eigen::VectorX<T>::Zero(objCoeff.cols());
+                    ? reducedCost.maxCoeff(&entering) <= EPSILON<T>
+                    : reducedCost.minCoeff(&entering) >= -EPSILON<T>) {
+                x = Eigen::VectorX<T>::Zero(reducedCost.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
                     x(basic(r)) = rhs(r);
                 }
-                f = -tableau(rhs.rows(), objCoeff.cols());
+                f = -tableau(rhs.rows(), reducedCost.cols());
                 return true;
             }
             auto col = tableau.col(entering);
@@ -55,32 +55,32 @@ namespace OR {
     }
 
     template<int Optim, typename T, int Major>
-    bool dualSimplexMethod(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major> &tableau,
+    bool dualSimplexMethod(DynamicMatrix<T, Major> &tableau,
                            Eigen::VectorX<Eigen::Index> &basic,
                            Eigen::VectorX<T> &x, T &f) {
         auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
-        auto objCoeff = tableau.row(rhs.rows()).head(tableau.cols() - 1);
+        auto reducedCost = tableau.row(rhs.rows()).head(tableau.cols() - 1);
 
         for (Eigen::Index i = 0; i < tableau.rows(); ++i) {
             // choose min rhs(b)
             Eigen::Index leaving;
             if (rhs.minCoeff(&leaving) >= -EPSILON<T>) {
-                x = Eigen::VectorX<T>::Zero(objCoeff.cols());
+                x = Eigen::VectorX<T>::Zero(reducedCost.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
                     x(basic(r)) = rhs(r);
                 }
-                f = -tableau(rhs.rows(), objCoeff.cols());
+                f = -tableau(rhs.rows(), reducedCost.cols());
                 return true;
             }
             auto row = tableau.row(leaving);
 
             // choose min/max theta
-            Eigen::Index entering = objCoeff.cols();
+            Eigen::Index entering = reducedCost.cols();
             if constexpr (Optim == Maximize) {
                 T minTheta = std::numeric_limits<T>::max();
-                for (Eigen::Index c = 0; c < objCoeff.cols(); ++c) {
+                for (Eigen::Index c = 0; c < reducedCost.cols(); ++c) {
                     if (row(c) < 0) {
-                        if (const T theta = objCoeff(c) / row(c); theta < minTheta) {
+                        if (const T theta = reducedCost(c) / row(c); theta < minTheta) {
                             minTheta = theta;
                             entering = c;
                         }
@@ -88,16 +88,16 @@ namespace OR {
                 }
             } else {
                 T maxTheta = -std::numeric_limits<T>::max();
-                for (Eigen::Index c = 0; c < objCoeff.cols(); ++c) {
+                for (Eigen::Index c = 0; c < reducedCost.cols(); ++c) {
                     if (row(c) < 0) {
-                        if (const T theta = objCoeff(c) / row(c); theta > maxTheta) {
+                        if (const T theta = reducedCost(c) / row(c); theta > maxTheta) {
                             maxTheta = theta;
                             entering = c;
                         }
                     }
                 }
             }
-            if (entering == objCoeff.cols()) {
+            if (entering == reducedCost.cols()) {
                 return false;
             }
 
