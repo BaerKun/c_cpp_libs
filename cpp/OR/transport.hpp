@@ -6,7 +6,7 @@
 
 namespace OR {
     template<int Optim, typename T, int Major>
-    void TransportationSimplexMethod(DynamicMatrix<T, Major> &cost,
+    void transportationSimplexMethod(DynamicMatrix<T, Major> &cost,
                                      Eigen::VectorX<T> &supply, Eigen::RowVectorX<T> &demand,
                                      DynamicMatrix<T, Major> &x, T &f);
 }

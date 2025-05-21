@@ -2,8 +2,8 @@
 #define SHARE_HPP
 
 namespace OR {
-    template<typename T, int Major>
-    using DynamicMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Major>;
+    template<typename T, int Major = Eigen::RowMajor>
+    using DynamicMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Major>;
 
     enum Optim {
         Maximize, Minimize
