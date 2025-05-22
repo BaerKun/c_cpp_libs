@@ -38,7 +38,7 @@ static inline LinkNodePtr nodeUnlink(LinkNodePtr *const prevNextPtr) {
     return node;
 }
 
-static LinkNode **nodeFind(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE const data) {
+static LinkNodePtr *nodeFind(LinkNodePtr *const headNextPtr, LINK_NODE_DATA_TYPE const data) {
     LinkNodePtr *prev = headNextPtr;
     for (LinkNodePtr node = *prev; node && node->data != data; prev = &node->next, node = *prev) {
     }

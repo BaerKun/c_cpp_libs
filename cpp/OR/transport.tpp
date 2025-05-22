@@ -3,24 +3,24 @@
 #include "transport.hpp"
 #include <vector>
 #include <functional>
+#include <limits>
 
 namespace OR {
-    struct BasicVariable { // link node 2d
+    struct BasicVariable {
+        // link node 2d
         Eigen::Index rowIdx, colIdx;
         BasicVariable *next = nullptr;
         BasicVariable *down = nullptr;
 
-        BasicVariable(const Eigen::Index r, const Eigen::Index c) {
-            this->rowIdx = r;
-            this->colIdx = c;
+        explicit BasicVariable(const Eigen::Index r = -1, const Eigen::Index c = -1)
+            : rowIdx(r), colIdx(c) {
         }
     };
 
     class BasicContainer {
     public:
-        BasicContainer(const Eigen::Index rows, const Eigen::Index cols) : row_(rows), col_(cols) {
-            row_.assign(rows, nullptr);
-            col_.assign(cols, nullptr);
+        BasicContainer(const Eigen::Index rows, const Eigen::Index cols)
+            : row_(rows, nullptr), col_(cols, nullptr) {
         }
 
         ~BasicContainer() {
@@ -36,39 +36,42 @@ namespace OR {
             }
         }
 
-        BasicVariable *getHead() {
+        [[nodiscard]] BasicVariable *getHead() const {
             return row_[0];
         }
 
-        void push(const Eigen::Index r, const Eigen::Index c) {
-            static const auto pushBack = [](BasicVariable *&head, BasicVariable *const node) {
-                if (head == nullptr) {
-                    head = node->next = node;
-                } else {
-                    node->next = head->next;
-                    head->next = node;
-                }
-            };
+        void push(BasicVariable *const node) {
+            if (BasicVariable *&left = row_[node->rowIdx]; left == nullptr) {
+                left = node->next = node;
+            } else {
+                node->next = left->next;
+                left->next = node;
+            }
+            if (BasicVariable *&top = col_[node->colIdx]; top == nullptr) {
+                top = node->down = node;
+            } else {
+                node->down = top->down;
+                top->down = node;
+            }
+        }
 
-            static const auto pushDown = [](BasicVariable *&head, BasicVariable *const node) {
-                if (head == nullptr) {
-                    head = node->down = node;
-                } else {
-                    node->down = head->down;
-                    head->down = node;
-                }
-            };
+        void unlink(const BasicVariable *const node) {
+            auto left = row_[node->rowIdx];
+            if (node == left)
+                row_[node->rowIdx] = node->next;
+            for (; left->next != node; left = left->next);
+            left->next = node->next;
 
-            const auto node = new BasicVariable(r, c);
-            pushBack(row_[r], node);
-            pushDown(col_[c], node);
+            auto top = col_[node->colIdx];
+            if (node == top)
+                col_[node->colIdx] = node->down;
+            for (; top->down != node; top = top->down);
+            top->down = node->down;
         }
 
     private:
         std::vector<BasicVariable *> row_;
         std::vector<BasicVariable *> col_;
-
-
     };
 
     template<int Optim, typename T, int Major>
@@ -77,7 +80,7 @@ namespace OR {
                          BasicContainer &basic) {
         Eigen::Index r = 0, c = 0;
         while (true) {
-            basic.push(r, c);
+            basic.push(new BasicVariable(r, c));
             if (supply[r] < demand[c]) {
                 x(r, c) = supply[r];
                 demand[c] -= supply[r];
@@ -129,6 +132,96 @@ namespace OR {
         }
     }
 
+    class ClosedLoopHelper {
+    public:
+        ClosedLoopHelper(BasicContainer &basic, std::vector<BasicVariable *> &closedLoop)
+            : basic_(basic), closedLoop_(closedLoop) {
+            entering_ = new BasicVariable;
+        }
+
+        ~ClosedLoopHelper() {
+            delete entering_;
+        }
+
+        void find(const Eigen::Index enteringRow, const Eigen::Index enteringCol) {
+            entering_->rowIdx = enteringRow;
+            entering_->colIdx = enteringCol;
+            basic_.push(entering_);
+            closedLoop_.clear();
+            moveRow(entering_);
+        }
+
+        void update(BasicVariable *const leaving) {
+            entering_ = leaving;
+        }
+
+    private:
+        bool moveRow(BasicVariable *node) {
+            const size_t size = closedLoop_.size();
+            closedLoop_.push_back(node);
+            for (auto nodeRow = node->next; nodeRow != node; nodeRow = nodeRow->next) {
+                if (nodeRow == entering_ || moveCol(nodeRow))
+                    return true;
+            }
+            closedLoop_.resize(size);
+            return false;
+        }
+
+        bool moveCol(BasicVariable *node) {
+            const size_t size = closedLoop_.size();
+            closedLoop_.push_back(node);
+            for (auto nodeCol = node->down; nodeCol != node; nodeCol = nodeCol->down) {
+                if (nodeCol == entering_ || moveRow(nodeCol))
+                    return true;
+            }
+            closedLoop_.resize(size);
+            return false;
+        }
+
+        BasicVariable *entering_;
+        BasicContainer &basic_;
+        std::vector<BasicVariable *> &closedLoop_;
+    };
+
+    template<int Optim, typename T, int Major>
+    void closedLoopAdjust(DynamicMatrix<T, Major> &reducedCost,
+                          BasicContainer &basic,
+                          DynamicMatrix<T, Major> &x) {
+        std::vector<BasicVariable *> closedLoop;
+        ClosedLoopHelper helper(basic, closedLoop);
+        closedLoop.reserve(reducedCost.rows() + reducedCost.cols());
+
+        while (true) {
+            Eigen::Index enteringRow, enteringCol;
+            const T minReducedCost = reducedCost.minCoeff(&enteringRow, &enteringCol);
+            if (minReducedCost >= 0)
+                break;
+            helper.find(enteringRow, enteringCol);
+
+            T adjustment = std::numeric_limits<T>::max();
+            BasicVariable *leaving = nullptr;
+            for (size_t i = 1; i < closedLoop.size(); ++i) {
+                if (i & 1) {
+                    const auto node = closedLoop[i];
+                    if (x(node->rowIdx, node->colIdx) < adjustment) {
+                        adjustment = x(node->rowIdx, node->colIdx);
+                        leaving = closedLoop[i];
+                    }
+                }
+            }
+            for (size_t i = 0; i < closedLoop.size(); ++i) {
+                const auto node = closedLoop[i];
+                if (i & 1)
+                    x(node->rowIdx, node->colIdx) -= adjustment;
+                else
+                    x(node->rowIdx, node->colIdx) += adjustment;
+            }
+            basic.unlink(leaving);
+            helper.update(leaving);
+        }
+    }
+
+
     template<int Optim, typename T, int Major>
     void transportationSimplexMethod(DynamicMatrix<T, Major> &cost,
                                      Eigen::VectorX<T> &supply, Eigen::RowVectorX<T> &demand,
@@ -139,5 +232,6 @@ namespace OR {
 
         northwestCorner<Optim, T>(supply, demand, x, basic);
         potentialMethod(cost, basic, reducedCost);
+        closedLoopAdjust<Optim, T>(reducedCost, basic, x);
     }
 }
