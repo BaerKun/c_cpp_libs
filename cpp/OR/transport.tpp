@@ -2,7 +2,6 @@
 
 #include "transport.hpp"
 #include <vector>
-#include <functional>
 #include <limits>
 
 namespace OR {
@@ -21,19 +20,6 @@ namespace OR {
     public:
         BasicContainer(const Eigen::Index rows, const Eigen::Index cols)
             : row_(rows, nullptr), col_(cols, nullptr) {
-        }
-
-        ~BasicContainer() {
-            for (const auto head: row_) {
-                if (head == nullptr) continue;
-
-                auto node = head;
-                do {
-                    const auto next = node->next;
-                    delete node;
-                    node = next;
-                } while (node != head);
-            }
         }
 
         [[nodiscard]] BasicVariable *getHead() const {
@@ -70,13 +56,15 @@ namespace OR {
         }
 
         template<typename T, int Major>
-        T calcMaxMin(const DynamicMatrix<T, Major> &cost, const DynamicMatrix<T, Major> &solution) {
+        T finalWork(const DynamicMatrix<T, Major> &cost, const DynamicMatrix<T, Major> &solution) {
             T maxMin = 0;
             for (const BasicVariable *head: row_) {
                 const BasicVariable *node = head;
                 do {
+                    const auto next = node->next;
                     maxMin += cost(node->rowIdx, node->colIdx) * solution(node->rowIdx, node->colIdx);
-                    node = node->next;
+                    delete node;
+                    node = next;
                 } while (node != head);
             }
             return maxMin;
@@ -111,7 +99,7 @@ namespace OR {
     template<typename T, int Major>
     class ReducedCost {
     public:
-        ReducedCost(DynamicMatrix<T, Major> &cost)
+        explicit ReducedCost(DynamicMatrix<T, Major> &cost)
             : cost_(cost), reducedCost_(cost.rows(), cost.cols()), u(cost.rows()), v(cost.cols()) {
             entering_ = new BasicVariable;
         }
@@ -130,8 +118,8 @@ namespace OR {
         BasicVariable *findEntering() {
             Eigen::Index enteringRow, enteringCol;
             const T minReducedCost = reducedCost_.minCoeff(&enteringRow, &enteringCol);
-            if (minReducedCost >= 0)
-                return nullptr;
+            if (minReducedCost >= -EPSILON<T>) return nullptr;
+
             entering_->rowIdx = enteringRow;
             entering_->colIdx = enteringCol;
             return entering_;
@@ -157,13 +145,11 @@ namespace OR {
         void recursionStep(const BasicVariable *const node,
                            const BasicVariable *const rowHead,
                            const BasicVariable *const colHead) {
-            const auto next = node->next;
-            if (next != rowHead) {
+            if (const auto next = node->next; next != rowHead) {
                 v(next->colIdx) = cost_(next->rowIdx, next->colIdx) - u(next->rowIdx);
                 recursionStep(next, rowHead, next);
             }
-            const auto down = node->down;
-            if (down != colHead) {
+            if (const auto down = node->down; down != colHead) {
                 u(down->rowIdx) = cost_(down->rowIdx, down->colIdx) - v(down->colIdx);
                 recursionStep(down, down, colHead);
             }
@@ -178,7 +164,7 @@ namespace OR {
 
     class ClosedLoop {
     public:
-        explicit ClosedLoop(const size_t capacity){
+        explicit ClosedLoop(const size_t capacity) {
             closedLoop_.reserve(capacity);
         }
 
@@ -257,6 +243,6 @@ namespace OR {
         northwestCorner<Optim, T>(supply, demand, solution, basic);
         closedLoopAdjust<Optim, T>(cost, basic, solution);
 
-        minmax = basic.calcMaxMin(cost, solution);
+        minmax = basic.finalWork(cost, solution);
     }
 }
