@@ -7,7 +7,7 @@ namespace OR {
     template<int Optim, typename T, int Major>
     bool simplexMethod(DynamicMatrix<T, Major> &tableau,
                        Eigen::VectorX<Eigen::Index> &basic,
-                       Eigen::VectorX<T> &x, T &f) {
+                       Eigen::VectorX<T> &solution, T &minmax) {
         auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
         auto reducedCost = tableau.row(rhs.rows()).head(tableau.cols() - 1); // 检验数
 
@@ -17,11 +17,11 @@ namespace OR {
             if (Optim == Maximize
                     ? reducedCost.maxCoeff(&entering) <= EPSILON<T>
                     : reducedCost.minCoeff(&entering) >= -EPSILON<T>) {
-                x = Eigen::VectorX<T>::Zero(reducedCost.cols());
+                solution = Eigen::VectorX<T>::Zero(reducedCost.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
-                    x(basic(r)) = rhs(r);
+                    solution(basic(r)) = rhs(r);
                 }
-                f = -tableau(rhs.rows(), reducedCost.cols());
+                minmax = -tableau(rhs.rows(), reducedCost.cols());
                 return true;
             }
             auto col = tableau.col(entering);
@@ -57,7 +57,7 @@ namespace OR {
     template<int Optim, typename T, int Major>
     bool dualSimplexMethod(DynamicMatrix<T, Major> &tableau,
                            Eigen::VectorX<Eigen::Index> &basic,
-                           Eigen::VectorX<T> &x, T &f) {
+                           Eigen::VectorX<T> &solution, T &minmax) {
         auto rhs = tableau.col(tableau.cols() - 1).head(basic.rows());
         auto reducedCost = tableau.row(rhs.rows()).head(tableau.cols() - 1);
 
@@ -65,11 +65,11 @@ namespace OR {
             // choose min rhs(b)
             Eigen::Index leaving;
             if (rhs.minCoeff(&leaving) >= -EPSILON<T>) {
-                x = Eigen::VectorX<T>::Zero(reducedCost.cols());
+                solution = Eigen::VectorX<T>::Zero(reducedCost.cols());
                 for (Eigen::Index r = 0; r < rhs.rows(); ++r) {
-                    x(basic(r)) = rhs(r);
+                    solution(basic(r)) = rhs(r);
                 }
-                f = -tableau(rhs.rows(), reducedCost.cols());
+                minmax = -tableau(rhs.rows(), reducedCost.cols());
                 return true;
             }
             auto row = tableau.row(leaving);

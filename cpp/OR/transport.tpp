@@ -13,14 +13,14 @@ namespace OR {
         BasicVariable *down = nullptr;
 
         explicit BasicVariable(const Eigen::Index r = -1, const Eigen::Index c = -1)
-                : rowIdx(r), colIdx(c) {
+            : rowIdx(r), colIdx(c) {
         }
     };
 
     class BasicContainer {
     public:
         BasicContainer(const Eigen::Index rows, const Eigen::Index cols)
-                : row_(rows, nullptr), col_(cols, nullptr) {
+            : row_(rows, nullptr), col_(cols, nullptr) {
         }
 
         ~BasicContainer() {
@@ -69,6 +69,19 @@ namespace OR {
             top->down = node->down;
         }
 
+        template<typename T, int Major>
+        T calcMaxMin(const DynamicMatrix<T, Major> &cost, const DynamicMatrix<T, Major> &solution) {
+            T maxMin = 0;
+            for (const BasicVariable *head: row_) {
+                const BasicVariable *node = head;
+                do {
+                    maxMin += cost(node->rowIdx, node->colIdx) * solution(node->rowIdx, node->colIdx);
+                    node = node->next;
+                } while (node != head);
+            }
+            return maxMin;
+        }
+
     private:
         std::vector<BasicVariable *> row_;
         std::vector<BasicVariable *> col_;
@@ -76,18 +89,18 @@ namespace OR {
 
     template<int Optim, typename T, int Major>
     void northwestCorner(Eigen::VectorX<T> &supply, Eigen::RowVectorX<T> &demand,
-                         DynamicMatrix<T, Major> &x,
+                         DynamicMatrix<T, Major> &solution,
                          BasicContainer &basic) {
         Eigen::Index r = 0, c = 0;
         while (true) {
             basic.push(new BasicVariable(r, c));
             if (supply[r] < demand[c]) {
-                x(r, c) = supply[r];
+                solution(r, c) = supply[r];
                 demand[c] -= supply[r];
                 supply[r] = 0;
                 if (++r == supply.rows()) break;
             } else {
-                x(r, c) = demand[c];
+                solution(r, c) = demand[c];
                 supply[r] -= demand[c];
                 demand[c] = 0;
                 if (++c == demand.cols()) break;
@@ -96,58 +109,104 @@ namespace OR {
     }
 
     template<typename T, int Major>
-    void potentialMethod(DynamicMatrix < T, Major > &cost, BasicContainer & basic,
-                         DynamicMatrix < T, Major > &reducedCost) {
-        Eigen::VectorX<T> u(cost.rows());
-        Eigen::RowVectorX<T> v(cost.cols());
+    class ReducedCost {
+    public:
+        ReducedCost(DynamicMatrix<T, Major> &cost)
+            : cost_(cost), reducedCost_(cost.rows(), cost.cols()), u(cost.rows()), v(cost.cols()) {
+            entering_ = new BasicVariable;
+        }
 
-        std::function<void(const BasicVariable *, const BasicVariable *, const BasicVariable *)> recursionStep;
-        recursionStep = [&cost, &u, &v, &recursionStep](const BasicVariable *const node,
-                                                        const BasicVariable *const rowHead,
-                                                        const BasicVariable *const colHead) {
+        ~ReducedCost() {
+            delete entering_;
+        }
+
+        void init(const BasicVariable *const head) {
+            u(head->rowIdx) = 0;
+            v(head->colIdx) = cost_(head->rowIdx, head->colIdx);
+            recursionStep(head, head, head);
+            refresh();
+        }
+
+        BasicVariable *findEntering() {
+            Eigen::Index enteringRow, enteringCol;
+            const T minReducedCost = reducedCost_.minCoeff(&enteringRow, &enteringCol);
+            if (minReducedCost >= 0)
+                return nullptr;
+            entering_->rowIdx = enteringRow;
+            entering_->colIdx = enteringCol;
+            return entering_;
+        }
+
+        void update(BasicContainer &basic, BasicVariable *const leaving) {
+            basic.unlink(leaving);
+            u(entering_->rowIdx) = cost_(entering_->rowIdx, entering_->colIdx) - v(entering_->colIdx);
+            recursionStep(entering_, entering_, entering_->down);
+
+            refresh();
+            entering_ = leaving; // 内存复用
+        }
+
+    private:
+        void refresh() {
+            for (Eigen::Index r = 0; r < cost_.rows(); ++r) {
+                for (Eigen::Index c = 0; c < cost_.cols(); ++c)
+                    reducedCost_(r, c) = cost_(r, c) - u(r) - v(c);
+            }
+        }
+
+        void recursionStep(const BasicVariable *const node,
+                           const BasicVariable *const rowHead,
+                           const BasicVariable *const colHead) {
             const auto next = node->next;
             if (next != rowHead) {
-                v(next->colIdx) = cost(next->rowIdx, next->colIdx) - u(next->rowIdx);
+                v(next->colIdx) = cost_(next->rowIdx, next->colIdx) - u(next->rowIdx);
                 recursionStep(next, rowHead, next);
             }
             const auto down = node->down;
             if (down != colHead) {
-                u(down->rowIdx) = cost(down->rowIdx, down->colIdx) - v(down->colIdx);
+                u(down->rowIdx) = cost_(down->rowIdx, down->colIdx) - v(down->colIdx);
                 recursionStep(down, down, colHead);
             }
-        };
-
-        const auto head = basic.getHead();
-        u(head->rowIdx) = 0;
-        v(head->colIdx) = cost(head->rowIdx, head->colIdx);
-        recursionStep(head, head, head);
-        for (Eigen::Index r = 0; r < cost.rows(); ++r) {
-            for (Eigen::Index c = 0; c < cost.cols(); ++c)
-                reducedCost(r, c) = cost(r, c) - u(r) - v(c);
         }
-    }
 
-    class ClosedLoopHelper {
+        DynamicMatrix<T, Major> &cost_;
+        DynamicMatrix<T, Major> reducedCost_;
+        Eigen::VectorX<T> u;
+        Eigen::RowVectorX<T> v;
+        BasicVariable *entering_;
+    };
+
+    class ClosedLoop {
     public:
-        ClosedLoopHelper(BasicContainer &basic, std::vector<BasicVariable *> &closedLoop)
-                : basic_(basic), closedLoop_(closedLoop) {
-            entering_ = new BasicVariable;
+        explicit ClosedLoop(const size_t capacity){
+            closedLoop_.reserve(capacity);
         }
 
-        ~ClosedLoopHelper() {
-            delete entering_;
-        }
-
-        void find(const Eigen::Index enteringRow, const Eigen::Index enteringCol) {
-            entering_->rowIdx = enteringRow;
-            entering_->colIdx = enteringCol;
-            basic_.push(entering_);
+        void find(BasicContainer &basic, BasicVariable *entering) {
+            basic.push(entering);
+            entering_ = entering;
             closedLoop_.clear();
-            recursionStep(entering_);
+            recursionStep(entering);
         }
 
-        void update(BasicVariable *const leaving) {
-            entering_ = leaving;
+        template<typename T, int Major>
+        BasicVariable *update(DynamicMatrix<T, Major> &solution) {
+            T adjustment = std::numeric_limits<T>::max();
+            BasicVariable *leaving = nullptr;
+            for (size_t i = 1; i < closedLoop_.size(); i += 2) {
+                if (const auto node = closedLoop_[i]; solution(node->rowIdx, node->colIdx) < adjustment) {
+                    adjustment = solution(node->rowIdx, node->colIdx);
+                    leaving = closedLoop_[i];
+                }
+            }
+            for (size_t i = 0; i < closedLoop_.size(); i += 2) {
+                const auto plus = closedLoop_[i];
+                solution(plus->rowIdx, plus->colIdx) += adjustment;
+
+                const auto minus = closedLoop_[i + 1];
+                solution(minus->rowIdx, minus->colIdx) -= adjustment;
+            }
+            return leaving;
         }
 
     private:
@@ -155,7 +214,6 @@ namespace OR {
             closedLoop_.push_back(node);
             for (auto nodeRow = node->next; nodeRow != node; nodeRow = nodeRow->next) {
                 closedLoop_.push_back(nodeRow);
-
                 for (auto nodeCol = nodeRow->down; nodeCol != nodeRow; nodeCol = nodeCol->down) {
                     if (nodeCol == entering_ || recursionStep(nodeCol))
                         return true;
@@ -166,69 +224,39 @@ namespace OR {
             return false;
         }
 
-        BasicVariable *entering_;
-        BasicContainer &basic_;
-        std::vector<BasicVariable *> &closedLoop_;
+        std::vector<BasicVariable *> closedLoop_;
+        BasicVariable *entering_ = nullptr;
     };
 
     template<int Optim, typename T, int Major>
-    void closedLoopAdjust(DynamicMatrix < T, Major > &cost,
-                          DynamicMatrix < T, Major > &reducedCost,
-                          BasicContainer & basic,
-                          DynamicMatrix < T, Major > &x) {
-        std::vector<BasicVariable *> closedLoop;
-        ClosedLoopHelper helper(basic, closedLoop);
-        closedLoop.reserve(cost.rows() + cost.cols());
+    void closedLoopAdjust(DynamicMatrix<T, Major> &cost,
+                          BasicContainer &basic,
+                          DynamicMatrix<T, Major> &solution) {
+        ClosedLoop closedLoop(cost.rows() + cost.cols());
+        ReducedCost<T, Major> reducedCost(cost);
 
+        reducedCost.init(basic.getHead());
         while (true) {
-            Eigen::Index enteringRow, enteringCol;
-            const T minReducedCost = reducedCost.minCoeff(&enteringRow, &enteringCol);
-            if (minReducedCost >= 0)
-                break;
-            helper.find(enteringRow, enteringCol);
+            const auto entering = reducedCost.findEntering();
+            if (entering == nullptr) return;
+            closedLoop.find(basic, entering);
 
-            T adjustment = std::numeric_limits<T>::max();
-            BasicVariable *leaving = nullptr;
-            for (size_t i = 1; i < closedLoop.size(); ++i) {
-                if (i & 1) {
-                    const auto node = closedLoop[i];
-                    if (x(node->rowIdx, node->colIdx) < adjustment) {
-                        adjustment = x(node->rowIdx, node->colIdx);
-                        leaving = closedLoop[i];
-                    }
-                }
-            }
-            for (size_t i = 0; i < closedLoop.size(); ++i) {
-                const auto node = closedLoop[i];
-                if (i & 1)
-                    x(node->rowIdx, node->colIdx) -= adjustment;
-                else
-                    x(node->rowIdx, node->colIdx) += adjustment;
-            }
-            basic.unlink(leaving);
-            helper.update(leaving);
-            potentialMethod(cost, basic, reducedCost);
+            const auto leaving = closedLoop.update(solution);
+            reducedCost.update(basic, leaving);
         }
     }
 
 
     template<int Optim, typename T, int Major>
-    void transportationSimplexMethod(DynamicMatrix < T, Major > &cost,
-                                     Eigen::VectorX<T> & supply, Eigen::RowVectorX<T> & demand,
-                                     DynamicMatrix < T, Major > &x, T & f) {
+    void transportationSimplexMethod(DynamicMatrix<T, Major> &cost,
+                                     Eigen::VectorX<T> &supply, Eigen::RowVectorX<T> &demand,
+                                     DynamicMatrix<T, Major> &solution, T &minmax) {
         BasicContainer basic(cost.rows(), cost.cols());
-        DynamicMatrix < T, Major > reducedCost(cost.rows(), cost.cols());
-        x = DynamicMatrix < T, Major > ::Zero(cost.rows(), cost.cols());
+        solution = DynamicMatrix<T, Major>::Zero(cost.rows(), cost.cols());
 
-        northwestCorner<Optim, T>(supply, demand, x, basic);
-        potentialMethod(cost, basic, reducedCost);
-        closedLoopAdjust<Optim, T>(cost, reducedCost, basic, x);
+        northwestCorner<Optim, T>(supply, demand, solution, basic);
+        closedLoopAdjust<Optim, T>(cost, basic, solution);
 
-        f = 0;
-        for (Eigen::Index r = 0; r < cost.rows(); ++r) {
-            for (Eigen::Index c = 0; c < cost.cols(); ++c) {
-                f += cost(r, c) * x(r, c);
-            }
-        }
+        minmax = basic.calcMaxMin(cost, solution);
     }
 }

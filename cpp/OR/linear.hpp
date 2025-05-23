@@ -55,7 +55,7 @@ namespace OR {
             return tableau_;
         }
 
-        bool solve(Eigen::VectorX<T> &x, T &f);
+        bool solve(Eigen::VectorX<T> &solution, T &minmax);
 
     private:
         Eigen::RowVectorX<T> objective_{};
@@ -77,7 +77,7 @@ namespace OR {
     template<int Optim, typename T, int Major>
     bool simplexMethod(DynamicMatrix<T, Major> &tableau,
                        Eigen::VectorX<Eigen::Index> &basic,
-                       Eigen::VectorX<T> &x, T &f);
+                       Eigen::VectorX<T> &solution, T &minmax);
 
     /*
      * tableau = [ A  b
@@ -87,7 +87,7 @@ namespace OR {
     template<int Optim, typename T, int Major>
     bool dualSimplexMethod(DynamicMatrix<T, Major> &tableau,
                            Eigen::VectorX<Eigen::Index> &basic,
-                           Eigen::VectorX<T> &x, T &f);
+                           Eigen::VectorX<T> &solution, T &minmax);
 }
 
 #include "linear.tpp"

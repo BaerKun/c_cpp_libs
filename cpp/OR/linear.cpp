@@ -2,7 +2,7 @@
 
 namespace OR {
     template<typename T>
-    bool LinearProgram<T>::solve(Eigen::VectorX<T> &x, T &f) {
+    bool LinearProgram<T>::solve(Eigen::VectorX<T> &solution, T &minmax) {
         const Eigen::Index numObjVar = objective_.cols();
         const Eigen::Index numConstr = constraints_.size();
 
@@ -61,8 +61,8 @@ namespace OR {
         // 直接单纯形法
         if (numArtificialVar == 0) {
             reducedCost.head(numObjVar) = objective_;
-            if (!simplexMethod<Maximize>(tableau_, basic, var, f)) return false;
-            x = var.head(numObjVar);
+            if (!simplexMethod<Maximize>(tableau_, basic, var, minmax)) return false;
+            solution = var.head(numObjVar);
             return true;
         }
 
@@ -74,8 +74,8 @@ namespace OR {
                 reducedCost -= tableau_.row(i);
         }
 
-        if (!simplexMethod<Minimize>(tableau_, basic, var, f)) return false;
-        if (f >= EPSILON<T>) return false;
+        if (!simplexMethod<Minimize>(tableau_, basic, var, minmax)) return false;
+        if (minmax >= EPSILON<T>) return false;
 
         // 第二阶段
         tableau_.col(numObjAndSlackVar) = rhs; // 复制rhs，防止resize后丢失
@@ -91,8 +91,8 @@ namespace OR {
         }
 
         var.resize(numObjAndSlackVar);
-        if (!simplexMethod<Maximize>(tableau_, basic, var, f)) return false;
-        x = var.head(numObjVar);
+        if (!simplexMethod<Maximize>(tableau_, basic, var, minmax)) return false;
+        solution = var.head(numObjVar);
         return true;
     }
 
