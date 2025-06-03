@@ -3,6 +3,7 @@
 
 typedef int DistanceType;
 
-void reconstructTurnpike(DistanceType distances[], DistanceType points[], int npts);
+void reconstructTurnpike(DistanceType distances[], DistanceType points[],
+                         int npts);
 
-#endif //TURNPIKE_RECONSTRUCTION_H
+#endif // TURNPIKE_RECONSTRUCTION_H

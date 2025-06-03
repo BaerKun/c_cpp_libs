@@ -14,4 +14,4 @@
 #define RESET_BACKGROUND_COLOR() puts("\033[49m")
 #define RESET_ALL() puts("\033[0m")
 
-#endif //ANSI_H
+#endif // ANSI_H

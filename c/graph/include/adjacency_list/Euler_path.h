@@ -10,4 +10,4 @@ void EulerCircuit(GraphPtr graph, LinkNodePtr *path, VertexId src);
 
 void EulerPath(GraphPtr graph, LinkNodePtr *path, VertexId src, VertexId dst);
 
-#endif //GRAPH_EULER_PATH_H
+#endif // GRAPH_EULER_PATH_H

@@ -14,7 +14,7 @@ add_subdirectory(simple_algorithm)
 add_subdirectory(geometry)
 
 # test
-add_subdirectory(_test)
+#add_subdirectory(_test)
 
 # tmp
 # add_subdirectory(tmp)

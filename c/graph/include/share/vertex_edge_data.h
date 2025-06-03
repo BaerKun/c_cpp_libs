@@ -13,7 +13,7 @@ typedef VERTEX_DATA_TYPE VertexData;
 typedef int WeightType;
 
 struct EdgeData {
-    WeightType weight;
+  WeightType weight;
 };
 
 typedef struct EdgeData EdgeData;
@@ -24,4 +24,4 @@ typedef struct EdgeData EdgeData;
 
 #endif
 
-#endif //GRAPH_VERTEX_EDGE_H
+#endif // GRAPH_VERTEX_EDGE_H

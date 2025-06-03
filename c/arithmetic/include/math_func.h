@@ -1,23 +1,32 @@
 #ifndef MATH_FUNC_H
 #define MATH_FUNC_H
 
-typedef enum {
-    CONSTANT = -2, INTERMEDIATE = -1, VARIABLE = 0
-} NumberType;
+typedef enum { CONSTANT = -2, INTERMEDIATE = -1, VARIABLE = 0 } NumberType;
 
 typedef enum {
-    UNKNOWN, ADD, NEG, MUL, REC, POW, EXP, LOG, SIN, COS, TAN
+  UNKNOWN,
+  ADD,
+  NEG,
+  MUL,
+  REC,
+  POW,
+  EXP,
+  LOG,
+  SIN,
+  COS,
+  TAN
 } OperationType;
 
-typedef struct ComputationNode_ ComputationNode, *ComputationNodePtr, MathFunction;
+typedef struct ComputationNode_ ComputationNode, *ComputationNodePtr,
+    MathFunction;
 
 struct ComputationNode_ {
-    float value, grad;
-    NumberType type;
-    OperationType operation;
-    int shared;
-    ComputationNodePtr *end;
-    ComputationNodePtr operand[0];
+  float value, grad;
+  NumberType type;
+  OperationType operation;
+  int shared;
+  ComputationNodePtr *end;
+  ComputationNodePtr operand[0];
 };
 
 /*
@@ -30,11 +39,11 @@ ComputationNodePtr autoConstant(float value);
 
 ComputationNodePtr autoIntermediate(OperationType operation);
 
-ComputationNode *constant(float value);
+ComputationNodePtr constant(float value);
 
-ComputationNode *variable(int index);
+ComputationNodePtr variable(int index);
 
-ComputationNode *intermediate(OperationType operation);
+ComputationNodePtr intermediate(OperationType operation);
 
 void mfDelete(ComputationNodePtr node);
 
@@ -76,4 +85,4 @@ ComputationNodePtr mfCos(ComputationNodePtr a);
 
 ComputationNodePtr mfTan(ComputationNodePtr a);
 
-#endif //MATH_FUNC_H
+#endif // MATH_FUNC_H

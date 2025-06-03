@@ -12,6 +12,7 @@ void ptsMaxDist(Point2f pts[], Point2f *maxPoint, int npts);
 
 float ptsMinDist(Point2f pts[], Point2f outpts[2], int npts);
 
-void minEnclosingCircle(Point2f pts[], int npts, Point2f *center, float *radius);
+void minEnclosingCircle(Point2f pts[], int npts, Point2f *center,
+                        float *radius);
 
-#endif //ALL4ALGORITHM_POINT_SET_H
+#endif // ALL4ALGORITHM_POINT_SET_H

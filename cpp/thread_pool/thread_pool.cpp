@@ -16,121 +16,120 @@
  */
 
 ThreadPool::ThreadPool(const int threadsNumber, const int taskQueueSize)
-        : threads_(threadsNumber), unfinishedTask_(0), queueSize_(taskQueueSize), shouldQuit_(false) {
-    for (int id = 0; id < threadsNumber; ++id) {
-        threads_[id] = std::thread([this, id]() {
-            while (true) {
-                std::unique_lock<std::mutex> lock(mutex_);
+    : threads_(threadsNumber), unfinishedTask_(0), queueSize_(taskQueueSize),
+      shouldQuit_(false) {
+  for (int id = 0; id < threadsNumber; ++id) {
+    threads_[id] = std::thread([this, id]() {
+      while (true) {
+        std::unique_lock<std::mutex> lock(mutex_);
 
-                if (!shouldQuit_ && taskQueue_.empty())
-                    taskJoin_.wait(lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
+        if (!shouldQuit_ && taskQueue_.empty())
+          taskJoin_.wait(
+              lock, [this]() { return !taskQueue_.empty() || shouldQuit_; });
 
-                if (shouldQuit_)
-                    return;
+        if (shouldQuit_) return;
 
-                const Task task = std::move(taskQueue_.front());
-                taskQueue_.pop();
-                lock.unlock();
+        const Task task = std::move(taskQueue_.front());
+        taskQueue_.pop();
+        lock.unlock();
 
-                task(TaskStatus::NORMAL, id);
+        task(TaskStatus::NORMAL, id);
 
-                lock.lock();
-                --unfinishedTask_;
-                lock.unlock();
+        lock.lock();
+        --unfinishedTask_;
+        lock.unlock();
 
-                taskOver_.notify_all();
-            }
-        });
-    }
+        taskOver_.notify_all();
+      }
+    });
+  }
 }
 
 void ThreadPool::pushTask(const Task &task, const bool force) {
-    mutex_.lock();
-    if (isQueueFull()) {
-        if (!force) {
-            mutex_.unlock();
-            return;
-        }
-
-        const auto front = std::move(taskQueue_.front());
-        taskQueue_.pop();
-        taskQueue_.push(task);
-        mutex_.unlock();
-
-        front(TaskStatus::REJECTED, -1);
-        return;
+  mutex_.lock();
+  if (isQueueFull()) {
+    if (!force) {
+      mutex_.unlock();
+      return;
     }
 
+    const auto front = std::move(taskQueue_.front());
+    taskQueue_.pop();
     taskQueue_.push(task);
-    ++unfinishedTask_;
-
     mutex_.unlock();
-    taskJoin_.notify_one();
+
+    front(TaskStatus::REJECTED, -1);
+    return;
+  }
+
+  taskQueue_.push(task);
+  ++unfinishedTask_;
+
+  mutex_.unlock();
+  taskJoin_.notify_one();
 }
 
 void ThreadPool::pushTask(Task &&task, const bool force) {
-    mutex_.lock();
-    if (isQueueFull()) {
-        if (force) {
-            taskQueue_.pop();
-            taskQueue_.push(std::move(task));
-        }
-        mutex_.unlock();
-        return;
+  mutex_.lock();
+  if (isQueueFull()) {
+    if (force) {
+      taskQueue_.pop();
+      taskQueue_.push(std::move(task));
     }
-
-    taskQueue_.push(std::move(task));
-    ++unfinishedTask_;
-
     mutex_.unlock();
-    taskJoin_.notify_one();
+    return;
+  }
+
+  taskQueue_.push(std::move(task));
+  ++unfinishedTask_;
+
+  mutex_.unlock();
+  taskJoin_.notify_one();
 }
 
 bool ThreadPool::waitTaskOver(const int ms) {
-    std::unique_lock<std::mutex> lock(mutex_);
+  std::unique_lock<std::mutex> lock(mutex_);
 
-    if (allTaskOver())
-        return true;
+  if (allTaskOver()) return true;
 
-    if (ms == 0)
-        return false;
+  if (ms == 0) return false;
 
-    if (ms > 0) {
-        // 作用和wait类似，但多了一个时间限制；
-        // 返回 线程被唤醒&&条件为true&&未超时；
-        return taskOver_.wait_for(lock, std::chrono::milliseconds(ms), [this]() { return allTaskOver(); });
-    }
+  if (ms > 0) {
+    // 作用和wait类似，但多了一个时间限制；
+    // 返回 线程被唤醒&&条件为true&&未超时；
+    return taskOver_.wait_for(lock, std::chrono::milliseconds(ms),
+                              [this]() { return allTaskOver(); });
+  }
 
-    taskOver_.wait(lock, [this]() { return allTaskOver(); });
-    return true;
+  taskOver_.wait(lock, [this]() { return allTaskOver(); });
+  return true;
 }
 
 void ThreadPool::runTask() {
-    mutex_.lock();
-    if (taskQueue_.empty() || shouldQuit_) {
-        mutex_.unlock();
-        return;
-    }
-
-    const Task task = std::move(taskQueue_.front());
-    taskQueue_.pop();
+  mutex_.lock();
+  if (taskQueue_.empty() || shouldQuit_) {
     mutex_.unlock();
+    return;
+  }
 
-    task(TaskStatus::MAIN, -1);
+  const Task task = std::move(taskQueue_.front());
+  taskQueue_.pop();
+  mutex_.unlock();
 
-    mutex_.lock();
-    --unfinishedTask_;
-    mutex_.unlock();
+  task(TaskStatus::MAIN, -1);
 
-    taskOver_.notify_all();
+  mutex_.lock();
+  --unfinishedTask_;
+  mutex_.unlock();
+
+  taskOver_.notify_all();
 }
 
 ThreadPool::~ThreadPool() {
-    mutex_.lock();
-    shouldQuit_ = true;
-    mutex_.unlock();
+  mutex_.lock();
+  shouldQuit_ = true;
+  mutex_.unlock();
 
-    taskJoin_.notify_all();
-    for (auto &t: threads_)
-        t.join();
+  taskJoin_.notify_all();
+  for (auto &t : threads_) t.join();
 }

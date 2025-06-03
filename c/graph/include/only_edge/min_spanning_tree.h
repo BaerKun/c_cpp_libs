@@ -5,4 +5,4 @@
 
 void KruskalMinSpanningTree(GraphPtr graph, EdgeId outputArray[]);
 
-#endif //GRAPH_MIN_SPANNING_TREE_H
+#endif // GRAPH_MIN_SPANNING_TREE_H

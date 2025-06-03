@@ -6,21 +6,17 @@
 #endif
 
 typedef struct Point2i {
-    int x;
-    int y;
-}Point2i;
+  int x, y;
+} Point2i;
 
 typedef struct Point2f {
-    float x;
-    float y;
-}Point2f;
+  float x, y;
+} Point2f;
 
-typedef struct Vector3f
-{
-    float x, y, z;
+typedef struct Vector3f {
+  float x, y, z;
 } Vector3f;
-
 
 typedef Point2f Vector2f;
 
-#endif //POINT_VECTOR_H
+#endif // POINT_VECTOR_H

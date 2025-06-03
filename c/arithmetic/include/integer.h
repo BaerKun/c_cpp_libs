@@ -7,4 +7,4 @@ int integerPartition(int x);
 
 void primeFactorization(int n, int factors[], int *numFactors);
 
-#endif //INTEGER_H
+#endif // INTEGER_H

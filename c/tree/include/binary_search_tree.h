@@ -22,4 +22,4 @@ TreeNodePtr bstUnlink(TreeNodePtr *parent2child);
 
 TreeNodePtr bstUnlinkWithData(TreeNodePtr *root, DataType data);
 
-#endif //TREE_BINARY_SEARCH_TREE_H
+#endif // TREE_BINARY_SEARCH_TREE_H

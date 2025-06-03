@@ -5,8 +5,9 @@
 
 #define WIGHT_MAX 0x7fffffff
 
-void DijkstraWeightedPath(GraphPtr graph, VertexId *parent, VertexId source, VertexId target);
+void DijkstraWeightedPath(GraphPtr graph, VertexId *parent, VertexId source,
+                          VertexId target);
 
 void weightedPath(GraphPtr graph, VertexId *parent, VertexId source);
 
-#endif //GRAPH_WEIGHT_PATH_H
+#endif // GRAPH_WEIGHT_PATH_H

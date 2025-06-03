@@ -25,4 +25,4 @@ void quickSelect(SORT_DATA_TYPE *array, int size, int number);
 
 void bucketSort(SORT_DATA_TYPE *array, int size);
 
-#endif //SORT_H
+#endif // SORT_H

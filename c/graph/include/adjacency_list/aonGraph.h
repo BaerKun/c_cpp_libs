@@ -4,12 +4,13 @@
 typedef int TimeType;
 typedef int NodeId;
 
-#define VERTEX_DATA_TYPE struct {\
-    TimeType duration;\
-    TimeType earlyStart;\
-    TimeType lateStart;\
-    TimeType slack;\
-}
+#define VERTEX_DATA_TYPE                                                       \
+  struct {                                                                     \
+    TimeType duration;                                                         \
+    TimeType earlyStart;                                                       \
+    TimeType lateStart;                                                        \
+    TimeType slack;                                                            \
+  }
 
 #include "graph.h"
 
@@ -25,4 +26,4 @@ void buildCriticalPath(AonGraphPtr aonGraph);
 
 void copyPath(AonGraphPtr aonGraph, NodeId copyArray[]);
 
-#endif //AONGRAPH_H
+#endif // AONGRAPH_H

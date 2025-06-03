@@ -6,4 +6,4 @@
 
 void InitIndegree(GraphPtr graph, int *indegree, QueuePtr queue);
 
-#endif //GRAPH_INIT_INDEGREE_H
+#endif // GRAPH_INIT_INDEGREE_H

@@ -6,48 +6,46 @@
 typedef struct LinkLike_ LinkLike;
 
 struct LinkLike_ {
-    LinkNodePtr head;
-    LinkNodePtr *tail;
+  LinkNodePtr head;
+  LinkNodePtr *tail;
 };
 
 static inline void linkLikeInit(LinkLike *const link) {
-    link->head = NULL;
-    link->tail = &link->head;
+  link->head = NULL;
+  link->tail = &link->head;
 }
 
 static inline void linkClear(LinkLike *const link) {
-    nodeClear(&link->head);
-    link->tail = &link->head;
+  nodeClear(&link->head);
+  link->tail = &link->head;
 }
 
-static inline void linkPush(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
-    nodeInsert(&link->head, data);
-    if (link->tail == &link->head)
-        link->tail = &link->head->next;
+static inline void linkPush(LinkLike *const link,
+                            LINK_NODE_DATA_TYPE const data) {
+  nodeInsert(&link->head, data);
+  if (link->tail == &link->head) link->tail = &link->head->next;
 }
 
 static inline void linkPop(LinkLike *const link) {
-    nodeDelete(&link->head);
-    if (link->head == NULL)
-        link->tail = &link->head;
+  nodeDelete(&link->head);
+  if (link->head == NULL) link->tail = &link->head;
 }
 
 static inline LINK_NODE_DATA_TYPE *linkTop(const LinkLike *const link) {
-    return &link->head->data;
+  return &link->head->data;
 }
 
-static inline void linkEnqueue(LinkLike *const link, LINK_NODE_DATA_TYPE const data) {
-    const LinkNodePtr node = newNode(data);
-    *link->tail = node;
-    link->tail = &node->next;
+static inline void linkEnqueue(LinkLike *const link,
+                               LINK_NODE_DATA_TYPE const data) {
+  const LinkNodePtr node = newNode(data);
+  *link->tail = node;
+  link->tail = &node->next;
 }
 
-static inline void linkDequeue(LinkLike *const link) {
-    linkPop(link);
-}
+static inline void linkDequeue(LinkLike *const link) { linkPop(link); }
 
 static inline int linkEmpty(const LinkLike *const link) {
-    return link->head == NULL;
+  return link->head == NULL;
 }
 
-#endif //LINK_LIKE_H
+#endif // LINK_LIKE_H

@@ -10,4 +10,4 @@
  */
 void graphFindArticulation(GraphPtr graph, LinkNodePtr *articulations);
 
-#endif //GRAPH_FIND_ARTICULATION_H
+#endif // GRAPH_FIND_ARTICULATION_H

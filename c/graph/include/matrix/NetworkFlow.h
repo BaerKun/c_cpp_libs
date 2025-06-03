@@ -7,8 +7,8 @@ typedef int FlowType;
 #define EDGE_DATA
 
 struct EdgeData {
-    FlowType capacity;
-    FlowType flow;
+  FlowType capacity;
+  FlowType flow;
 };
 
 #include "graph.h"
@@ -19,4 +19,4 @@ NetworkPtr CopyNetwork(NetworkPtr network);
 
 FlowType EdmondKarpMaxFlow(NetworkPtr network, VertexId source, VertexId sink);
 
-#endif //NETWORKFLOW_H
+#endif // NETWORKFLOW_H

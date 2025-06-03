@@ -1,29 +1,30 @@
 #include "adjacency_list/unweighed_path.h"
 #include "queue.h"
 
-void buildUnweightedPath(const GraphPtr graph, VertexId *parent, const VertexId source, const VertexId target) {
-    Queue queue;
-    queueInit(&queue, graph->vertexNum);
+void buildUnweightedPath(const GraphPtr graph, VertexId *parent,
+                         const VertexId source, const VertexId target) {
+  Queue queue;
+  queueInit(&queue, graph->vertexNum);
 
-    for(VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
-        parent[vertex] = -1;
+  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
+    parent[vertex] = -1;
 
-    enqueue(&queue, source);
-    while (queueEmpty(&queue)) {
-        const VertexId vertex = *queueFront(&queue);
-        dequeue(&queue);
+  enqueue(&queue, source);
+  while (queueEmpty(&queue)) {
+    const VertexId vertex = *queueFront(&queue);
+    dequeue(&queue);
 
-        for (EdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
-            const VertexId adjacentVertex = edge->target;
+    for (EdgePtr edge = graph->vertices[vertex].outEdges; edge;
+         edge = edge->next) {
+      const VertexId adjacentVertex = edge->target;
 
-            if (parent[adjacentVertex] == -1) {
-                parent[adjacentVertex] = vertex;
-                if (adjacentVertex == target)
-                    return;
+      if (parent[adjacentVertex] == -1) {
+        parent[adjacentVertex] = vertex;
+        if (adjacentVertex == target) return;
 
-                enqueue(&queue, adjacentVertex);
-            }
-        }
+        enqueue(&queue, adjacentVertex);
+      }
     }
-    queueFreeData(&queue);
+  }
+  queueFreeData(&queue);
 }

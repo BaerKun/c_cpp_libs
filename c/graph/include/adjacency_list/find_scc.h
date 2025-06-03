@@ -5,4 +5,4 @@
 
 void graphFindScc(GraphPtr graph, int number[]);
 
-#endif //GRAPH_FIND_SCC_H
+#endif // GRAPH_FIND_SCC_H
