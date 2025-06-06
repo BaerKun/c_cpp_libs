@@ -3,10 +3,8 @@
 
 #include "graph.h"
 
-#define WIGHT_MAX 0x7fffffff
+void PrimMinSpanningTree(ListGraphPtr graph, VertexId parent[], VertexId root);
 
-void PrimMinSpanningTree(GraphPtr graph, VertexId parent[], VertexId root);
-
-void printTree(GraphPtr graph, VertexId parent[], VertexId root);
+void printTree(ListGraphPtr graph, VertexId parent[], VertexId root);
 
 #endif // GRAPH_MIN_SPANNING_TREE_H

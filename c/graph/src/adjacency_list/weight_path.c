@@ -5,10 +5,8 @@
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 
-#ifdef WEIGHT_FOR_WEIGHTED_PATH
-
-void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent,
-                          const VertexId source, const VertexId target) {
+void DijkstraWeightedPath(const ListGraphPtr graph, VertexId *parent, const VertexId source,
+                          const VertexId target) {
   char *hasKnown = malloc(graph->vertexNum);
   int *distance = malloc(graph->vertexNum * sizeof(int));
   Heap heap;
@@ -16,7 +14,7 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent,
 
   for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
     hasKnown[vertex] = 0;
-    distance[vertex] = WIGHT_MAX;
+    distance[vertex] = UNREACHABLE;
   }
 
   distance[source] = 0;
@@ -28,17 +26,13 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent,
     if (vertex == target) return;
 
     hasKnown[vertex] = 1;
-    for (EdgePtr edge = graph->vertices[vertex].outEdges; edge;
-         edge = edge->next) {
+    for (ListEdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
       const VertexId adjacentVertex = edge->target;
 
-      if (hasKnown[adjacentVertex] ||
-          distance[adjacentVertex] <=
-              distance[vertex] + edge->data.WEIGHT_FOR_WEIGHTED_PATH)
+      if (hasKnown[adjacentVertex] || distance[adjacentVertex] <= distance[vertex] + edge->weight)
         continue;
 
-      distance[adjacentVertex] =
-          distance[vertex] + edge->data.WEIGHT_FOR_WEIGHTED_PATH;
+      distance[adjacentVertex] = distance[vertex] + edge->weight;
       parent[adjacentVertex] = vertex;
       heapPush(&heap, distance + adjacentVertex);
     }
@@ -50,8 +44,7 @@ void DijkstraWeightedPath(const GraphPtr graph, VertexId *parent,
 }
 
 // 无负值圈
-void weightedPath(const GraphPtr graph, VertexId *parent,
-                  const VertexId source) {
+void weightedPath(const ListGraphPtr graph, VertexId *parent, const VertexId source) {
   char *isInQueue = malloc(graph->vertexNum);
   int *distance = malloc(graph->vertexNum * sizeof(int));
   Queue queue;
@@ -59,7 +52,7 @@ void weightedPath(const GraphPtr graph, VertexId *parent,
 
   for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
     isInQueue[vertex] = 0;
-    distance[vertex] = WIGHT_MAX;
+    distance[vertex] = UNREACHABLE;
   }
 
   enqueue(&queue, source);
@@ -71,16 +64,12 @@ void weightedPath(const GraphPtr graph, VertexId *parent,
     dequeue(&queue);
     isInQueue[vertex] = 0;
 
-    for (EdgePtr edge = graph->vertices[vertex].outEdges; edge;
-         edge = edge->next) {
+    for (ListEdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
       const VertexId adjacentVertex = edge->target;
 
-      if (distance[adjacentVertex] <=
-          distance[vertex] + edge->data.WEIGHT_FOR_WEIGHTED_PATH)
-        continue;
+      if (distance[adjacentVertex] <= distance[vertex] + edge->weight) continue;
 
-      distance[adjacentVertex] =
-          distance[vertex] + edge->data.WEIGHT_FOR_WEIGHTED_PATH;
+      distance[adjacentVertex] = distance[vertex] + edge->weight;
       parent[adjacentVertex] = vertex;
 
       if (!isInQueue[adjacentVertex]) {
@@ -94,5 +83,3 @@ void weightedPath(const GraphPtr graph, VertexId *parent,
   free(distance);
   queueFreeData(&queue);
 }
-
-#endif

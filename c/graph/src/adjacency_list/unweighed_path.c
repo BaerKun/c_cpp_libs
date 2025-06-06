@@ -1,7 +1,7 @@
 #include "adjacency_list/unweighed_path.h"
 #include "queue.h"
 
-void buildUnweightedPath(const GraphPtr graph, VertexId *parent,
+void buildUnweightedPath(const ListGraphPtr graph, VertexId *parent,
                          const VertexId source, const VertexId target) {
   Queue queue;
   queueInit(&queue, graph->vertexNum);
@@ -14,7 +14,7 @@ void buildUnweightedPath(const GraphPtr graph, VertexId *parent,
     const VertexId vertex = *queueFront(&queue);
     dequeue(&queue);
 
-    for (EdgePtr edge = graph->vertices[vertex].outEdges; edge;
+    for (ListEdgePtr edge = graph->vertices[vertex].outEdges; edge;
          edge = edge->next) {
       const VertexId adjacentVertex = edge->target;
 

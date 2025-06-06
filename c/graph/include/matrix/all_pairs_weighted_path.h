@@ -3,9 +3,7 @@
 
 #include "matrix/graph.h"
 
-#define WIGHT_MAX 0x7fffffff
-typedef int WightType;
-
-void allPairsWeightedPath(GraphPtr graph);
+// 不限正负权值
+void allPairsWeightedPath(MatrixGraphPtr graph);
 
 #endif // GRAPH_ALL_PAIRS_WEIGHTED_PATH_H

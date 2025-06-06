@@ -3,7 +3,7 @@
 
 #include "graph.h"
 
-void buildUnweightedPath(GraphPtr graph, VertexId *parent, VertexId source,
+void buildUnweightedPath(ListGraphPtr graph, VertexId *parent, VertexId source,
                          VertexId target);
 
 #endif // GRAPH_UNWEIGHED_PATH_H

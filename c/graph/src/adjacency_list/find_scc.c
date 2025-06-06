@@ -4,7 +4,7 @@
 typedef struct VertexArg {
   char visitedOnce;
   int *number;
-  EdgePtr *outEdge;
+  ListEdgePtr *outEdge;
 } VertexArg;
 
 #define STACK_DATA_TYPE VertexArg *
@@ -18,11 +18,11 @@ typedef struct {
 
 static void findSccForward(Package *package, VertexArg *vertex) {
   // 拷贝，清空，以便之后加入反向边
-  EdgePtr edge = *vertex->outEdge;
+  ListEdgePtr edge = *vertex->outEdge;
   *vertex->outEdge = NULL;
 
   vertex->visitedOnce = 1;
-  for (EdgePtr nextEdge; edge; edge = nextEdge) {
+  for (ListEdgePtr nextEdge; edge; edge = nextEdge) {
     VertexArg *adjacentVertex = package->vertices + edge->target;
     if (!adjacentVertex->visitedOnce) findSccForward(package, adjacentVertex);
 
@@ -36,12 +36,12 @@ static void findSccForward(Package *package, VertexArg *vertex) {
 }
 
 static void findSccBackward(Package *package, VertexArg *vertex) {
-  EdgePtr edge = *vertex->outEdge;
+  ListEdgePtr edge = *vertex->outEdge;
   *vertex->outEdge = NULL;
 
   *vertex->number = package->counter;
   vertex->visitedOnce = 0;
-  for (EdgePtr nextEdge; edge; edge = nextEdge) {
+  for (ListEdgePtr nextEdge; edge; edge = nextEdge) {
     VertexArg *adjacentVertex = package->vertices + edge->target;
     if (adjacentVertex->visitedOnce) findSccBackward(package, adjacentVertex);
 
@@ -52,7 +52,7 @@ static void findSccBackward(Package *package, VertexArg *vertex) {
   }
 }
 
-void graphFindScc(const GraphPtr graph, int number[]) {
+void graphFindScc(const ListGraphPtr graph, int number[]) {
   VertexArg *vertices = malloc(graph->vertexNum * sizeof(VertexArg));
   Stack stack;
   stackInit(&stack, graph->vertexNum);

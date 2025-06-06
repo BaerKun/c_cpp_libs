@@ -1,25 +1,23 @@
 #include "adjacency_list/topsort.h"
+#include "adjacency_list/init_indegree.h"
 #include "queue.h"
-#include "share/init_indegree.h"
 #include <stdio.h>
 
-void buildTopPath(const GraphPtr graph, VertexId parent[]) {
+void buildTopPath(const ListGraphPtr graph, VertexId parent[]) {
   int counter = 0;
   int *indegree = malloc(graph->vertexNum * sizeof(int));
   Queue queue;
   queueInit(&queue, graph->vertexNum);
 
   InitIndegree(graph, indegree, &queue);
-  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
-    parent[vertex] = -1;
+  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) parent[vertex] = -1;
 
   while (queueEmpty(&queue)) {
     const VertexId vertex = *queueFront(&queue);
     dequeue(&queue);
     ++counter;
 
-    for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge;
-         thisEdge = thisEdge->next) {
+    for (ListEdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge; thisEdge = thisEdge->next) {
       const VertexId adjacentVertex = thisEdge->target;
       if (parent[adjacentVertex] == -1) parent[adjacentVertex] = vertex;
       if (!--indegree[adjacentVertex]) enqueue(&queue, adjacentVertex);
@@ -32,7 +30,7 @@ void buildTopPath(const GraphPtr graph, VertexId parent[]) {
   queueFreeData(&queue);
 }
 
-void topSort(const GraphPtr graph, VertexId sortArray[]) {
+void topSort(const ListGraphPtr graph, VertexId sortArray[]) {
   Queue queue;
   queueInit(&queue, graph->vertexNum);
 
@@ -45,8 +43,7 @@ void topSort(const GraphPtr graph, VertexId sortArray[]) {
     dequeue(&queue);
     sortArray[counter++] = vertex;
 
-    for (EdgePtr edge = graph->vertices[vertex].outEdges; edge;
-         edge = edge->next) {
+    for (ListEdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
       if (!--indegree[edge->target]) enqueue(&queue, edge->target);
     }
   }

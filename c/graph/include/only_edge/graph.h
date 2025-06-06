@@ -11,28 +11,29 @@
 
 #include "share/vertex_edge_data.h"
 
-typedef int VertexId;
-typedef int EdgeId;
-typedef int WeightType;
+typedef struct OnlyEdge_ OnlyEdge, *OnlyEdgePtr;
+typedef struct OnlyEdgeGraph_ OnlyEdgeGraph, *OnlyEdgeGraphPtr;
 
-typedef struct {
+
+struct OnlyEdge_{
   VertexId vertex1;
   VertexId vertex2;
+  WeightType weight;
   EdgeData data;
-} Edge, *EdgePtr;
+};
 
-typedef struct Graph {
-  EdgePtr edges;
+struct OnlyEdgeGraph_ {
+  OnlyEdgePtr edges;
   int edgeCapacity;
   int edgeNum;
   int vertexNum;
-} Graph, *GraphPtr;
+};
 
-GraphPtr newGraph(int edgeCapacity, int vertexNum);
+OnlyEdgeGraphPtr newGraph(int edgeCapacity, int vertexNum);
 
-void graphAddEdge(GraphPtr graph, VertexId vertex1, VertexId vertex2,
+void graphAddEdge(OnlyEdgeGraphPtr graph, VertexId vertex1, VertexId vertex2,
                   EdgeData data);
 
-void graphDestroy(GraphPtr graph);
+void graphDestroy(OnlyEdgeGraphPtr graph);
 
 #endif // GRAPH_GRAPH_H

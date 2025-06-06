@@ -3,6 +3,6 @@
 
 #include "graph.h"
 
-void KruskalMinSpanningTree(GraphPtr graph, EdgeId outputArray[]);
+void KruskalMinSpanningTree(OnlyEdgeGraphPtr graph, EdgeId outputArray[]);
 
 #endif // GRAPH_MIN_SPANNING_TREE_H

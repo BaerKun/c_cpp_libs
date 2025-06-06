@@ -7,7 +7,7 @@ typedef struct VertexArg {
   int preorder; // dfs中第一次访问节点的序数
   int lowest;   // 该点所在的所有圈的所有顶点中最小的序数（一个点也视作圈）
   struct VertexArg *parent;
-  EdgePtr outEdges;
+  ListEdgePtr outEdges;
 } VertexArg;
 
 typedef struct {
@@ -21,7 +21,7 @@ static void findArticulationStep(Package *package, VertexArg *vertex) {
 
   vertex->visited = 1;
   vertex->lowest = vertex->preorder = package->topo++;
-  for (EdgePtr edge = vertex->outEdges; edge; edge = edge->next) {
+  for (ListEdgePtr edge = vertex->outEdges; edge; edge = edge->next) {
     VertexArg *target = package->vertices + edge->target;
 
     if (!target->visited) {
@@ -50,7 +50,7 @@ static void findArticulationStep(Package *package, VertexArg *vertex) {
   }
 }
 
-void graphFindArticulation(const GraphPtr graph, LinkNode **articulations) {
+void graphFindArticulation(const ListGraphPtr graph, LinkNode **articulations) {
   VertexArg *vertices = malloc(sizeof(VertexArg) * graph->vertexNum);
   if (vertices == NULL) return;
 

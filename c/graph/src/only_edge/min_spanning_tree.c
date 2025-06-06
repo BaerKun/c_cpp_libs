@@ -1,15 +1,15 @@
 #include "only_edge/min_spanning_tree.h"
 #include "disjoint_set.h"
 
-#define HEAP_DATA_TYPE EdgePtr
-#define HEAP_LESS_THAN(a, b) ((a)->data.weight < (b)->data.weight)
+#define HEAP_DATA_TYPE OnlyEdgePtr
+#define HEAP_LESS_THAN(a, b) ((a)->weight < (b)->weight)
 #include "heap.h"
 
 #include <stdio.h>
 
-void KruskalMinSpanningTree(const GraphPtr graph, EdgeId outputArray[]) {
+void KruskalMinSpanningTree(const OnlyEdgeGraphPtr graph, EdgeId outputArray[]) {
   Heap heap;
-  EdgePtr *heapBuff = malloc(graph->edgeNum * sizeof(EdgePtr));
+  OnlyEdgePtr *heapBuff = malloc(graph->edgeNum * sizeof(OnlyEdgePtr));
   for (int i = 0; i < graph->edgeNum; ++i) heapBuff[i] = graph->edges + i;
   buildHeap(&heap, heapBuff, graph->edgeNum);
 
@@ -18,7 +18,7 @@ void KruskalMinSpanningTree(const GraphPtr graph, EdgeId outputArray[]) {
 
   int counter = 0;
   while (heap.size != 0) {
-    const EdgePtr edge = *heapTop(&heap);
+    const OnlyEdgePtr edge = *heapTop(&heap);
     heapPop(&heap);
 
     const int root1 = disjointSetFind(disjSet, edge->vertex1);
@@ -33,4 +33,5 @@ void KruskalMinSpanningTree(const GraphPtr graph, EdgeId outputArray[]) {
 
   outputArray[counter] = -1;
   free(heapBuff);
+  free(disjSet);
 }

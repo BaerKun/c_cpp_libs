@@ -1,32 +1,36 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge_data.h"
-#define MAX_VERTEX 64
+#include "share/type.h"
 
-typedef int VertexId;
+typedef struct MatrixVertex_ MatrixVertex, *MatrixVertexPtr;
+typedef struct MatrixEdge_ MatrixEdge, *MatrixEdgePtr;
+typedef struct MatrixGraph_ MatrixGraph, *MatrixGraphPtr;
 
-typedef struct {
-  EdgeData data;
+struct MatrixEdge_ {
   VertexId path;
-} Edge, *EdgePtr;
+  WeightType weight;
+  EdgeData data;
+};
 
-typedef struct {
+struct MatrixVertex_{
   VertexData data;
-} Vertex;
+};
 
-typedef struct {
+struct MatrixGraph_ {
   int capacity;
   int edgeNum;
   int vertexNum;
-  Vertex *vertices;
-  Edge (*edges)[MAX_VERTEX];
-} Graph, *GraphPtr;
+  MatrixVertex *vertices;
+  MatrixEdge **edges;
+};
 
-GraphPtr createGraph(int capacity, int vertexNum);
+MatrixGraphPtr graphInit(int capacity, int vertexNum);
 
-void deleteGraph(GraphPtr graph);
+void graphDestroy(MatrixGraphPtr graph);
 
-void addEdge(GraphPtr graph, VertexId source, VertexId target, EdgeData data);
+void graphAddEdge(MatrixGraphPtr graph, VertexId source, VertexId target, EdgeData data);
+
+void **SquareMatrix(int rowCols, int sizeOfElem);
 
 #endif // GRAPH_GRAPH_H

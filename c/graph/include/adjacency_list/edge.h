@@ -3,13 +3,13 @@
 
 #include "graph.h"
 
-static inline void edgeInsert(EdgePtr *const prevNextPtr, const EdgePtr edge) {
+static inline void edgeInsert(ListEdgePtr *const prevNextPtr, const ListEdgePtr edge) {
   edge->next = *prevNextPtr;
   *prevNextPtr = edge;
 }
 
-static inline EdgePtr edgeUnlink(EdgePtr *const prevNextPtr) {
-  const EdgePtr edge = *prevNextPtr;
+static inline ListEdgePtr edgeUnlink(ListEdgePtr *const prevNextPtr) {
+  const ListEdgePtr edge = *prevNextPtr;
   *prevNextPtr = edge->next;
   return edge;
 }

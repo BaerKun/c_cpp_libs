@@ -4,6 +4,6 @@
 #include "adjacency_list/graph.h"
 #include "queue.h"
 
-void InitIndegree(GraphPtr graph, int *indegree, QueuePtr queue);
+void InitIndegree(ListGraphPtr graph, int *indegree, QueuePtr queue);
 
 #endif // GRAPH_INIT_INDEGREE_H

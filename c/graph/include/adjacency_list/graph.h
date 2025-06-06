@@ -1,45 +1,43 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge_data.h"
+#include "share/type.h"
 
-typedef int VertexId;
-typedef struct Vertex_ Vertex, *VertexPtr;
-typedef struct Edge_ Edge, *EdgePtr;
-typedef struct Graph_ Graph, *GraphPtr;
+typedef struct ListVertex_ ListVertex, *ListVertexPtr;
+typedef struct ListEdge_ ListEdge, *ListEdgePtr;
+typedef struct ListGraph_ ListGraph, *ListGraphPtr;
 
-struct Vertex_ {
-  EdgePtr outEdges;
-  VertexId path;
+struct ListVertex_ {
   int indegree;
+  ListEdgePtr outEdges;
   VertexData data;
 };
 
-struct Edge_ {
-  EdgePtr next;
-  VertexId target;
+struct ListEdge_ {
   int flag;
-  EdgePtr reverse;
+  VertexId target;
+  WeightType weight;
+  ListEdgePtr reverse;
+  ListEdgePtr next;
   EdgeData data;
 };
 
-struct Graph_ {
-  Vertex *vertices;
+struct ListGraph_ {
+  ListVertex *vertices;
   int vertexNum;
   int edgeNum;
   int capacity;
 };
 
-void graphInit(GraphPtr graph, int capacity);
+void listGraphInit(ListGraphPtr graph, int capacity);
 
-void graphDestroy(GraphPtr graph);
+void listGraphDestroy(ListGraphPtr graph);
 
-static inline void graphAddVertex(const GraphPtr graph, const VertexData data) {
-  graph->vertices[graph->vertexNum++] =
-      (Vertex){.outEdges = 0, .path = 0, .indegree = 0, .data = data};
+static inline void listGraphAddVertex(const ListGraphPtr graph, const VertexData data) {
+  graph->vertices[graph->vertexNum++] = (ListVertex){.outEdges = 0, .indegree = 0, .data = data};
 }
 
-void graphAddEdge(GraphPtr graph, VertexId source, VertexId target,
-                  EdgeData data, int undirected);
+void listGraphAddEdge(ListGraphPtr graph, VertexId source, VertexId target, WeightType weight,
+                      VertexData data, int directed);
 
 #endif // GRAPH_GRAPH_H

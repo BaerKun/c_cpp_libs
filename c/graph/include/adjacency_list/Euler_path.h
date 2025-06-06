@@ -6,8 +6,8 @@
 #define LINK_NODE_DATA_TYPE VertexId
 #include "link_node.h"
 
-void EulerCircuit(GraphPtr graph, LinkNodePtr *path, VertexId src);
+void EulerCircuit(ListGraphPtr graph, LinkNodePtr *path, VertexId src);
 
-void EulerPath(GraphPtr graph, LinkNodePtr *path, VertexId src, VertexId dst);
+void EulerPath(ListGraphPtr graph, LinkNodePtr *path, VertexId src, VertexId dst);
 
 #endif // GRAPH_EULER_PATH_H

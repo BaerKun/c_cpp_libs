@@ -3,8 +3,8 @@
 
 #include "graph.h"
 
-void topSort(GraphPtr graph, VertexId sortArray[]);
+void topSort(ListGraphPtr graph, VertexId sortArray[]);
 
-void buildTopPath(GraphPtr graph, VertexId parent[]);
+void buildTopPath(ListGraphPtr graph, VertexId parent[]);
 
 #endif // GRAPH_TOPSORT_H

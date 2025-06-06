@@ -1,22 +1,21 @@
 #include "adjacency_list/min_spanning_tree.h"
 #include <stdio.h>
 #include <stdlib.h>
+
 #define HEAP_DATA_TYPE int *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 
-static void printTreeHelper(const VertexPtr vertices, VertexId parent[],
-                            const VertexId root, const int deepth) {
-  for (int i = 0; i < deepth; i++) printf("\t");
+static void printTreeHelper(const ListVertexPtr vertices, VertexId parent[], const VertexId root,
+                            const int depth) {
+  for (int i = 0; i < depth; i++) printf("\t");
   printf("|-%d\n", root);
 
-  for (EdgePtr edge = vertices[root].outEdges; edge; edge = edge->next)
-    if (parent[edge->target] == root)
-      printTreeHelper(vertices, parent, edge->target, deepth + 1);
+  for (ListEdgePtr edge = vertices[root].outEdges; edge; edge = edge->next)
+    if (parent[edge->target] == root) printTreeHelper(vertices, parent, edge->target, depth + 1);
 }
 
-void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[],
-                         const VertexId root) {
+void PrimMinSpanningTree(const ListGraphPtr graph, VertexId parent[], const VertexId root) {
   char *hasKnown = malloc(graph->vertexNum);
   int *minWeight = malloc(graph->vertexNum * sizeof(int));
   Heap heap;
@@ -25,7 +24,7 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[],
 
   for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
     hasKnown[vertex] = 0;
-    minWeight[vertex] = WIGHT_MAX;
+    minWeight[vertex] = UNREACHABLE;
   }
 
   heapPush(&heap, minWeight + root);
@@ -35,13 +34,12 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[],
     heapPop(&heap);
     hasKnown[vertex] = 1;
 
-    for (EdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge;
+    for (ListEdgePtr thisEdge = graph->vertices[vertex].outEdges; thisEdge;
          thisEdge = thisEdge->next) {
       const VertexId adjacentVertex = thisEdge->target;
 
-      if (!hasKnown[adjacentVertex] &&
-          minWeight[adjacentVertex] > thisEdge->data.weight) {
-        minWeight[adjacentVertex] = thisEdge->data.weight;
+      if (!hasKnown[adjacentVertex] && minWeight[adjacentVertex] > thisEdge->weight) {
+        minWeight[adjacentVertex] = thisEdge->weight;
         parent[adjacentVertex] = vertex;
         heapPush(&heap, minWeight + adjacentVertex);
       }
@@ -53,7 +51,7 @@ void PrimMinSpanningTree(const GraphPtr graph, VertexId parent[],
   heapFreeData(&heap);
 }
 
-void printTree(const GraphPtr graph, VertexId parent[], const VertexId root) {
+void printTree(const ListGraphPtr graph, VertexId parent[], const VertexId root) {
   if (root < 0 || root >= graph->vertexNum || parent[root] != root) {
     fputs("printTree: Invalid root vertex!\n", stderr);
     return;
