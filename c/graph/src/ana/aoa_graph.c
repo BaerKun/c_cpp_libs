@@ -5,10 +5,10 @@
 #include <stdlib.h>
 
 void addActivityNode(const AonGraphPtr aonGraph, const TimeType duration) {
-  if (aonGraph->vertexNum == aonGraph->capacity) {
-    aonGraph->capacity *= 2;
+  if (aonGraph->vertexNum == aonGraph->vertCap) {
+    aonGraph->vertCap *= 2;
 
-    aonGraph->vertices = realloc(aonGraph->vertices, sizeof(ActivityNode) * aonGraph->capacity);
+    aonGraph->vertices = realloc(aonGraph->vertices, sizeof(ActivityNode) * aonGraph->vertCap);
     if (aonGraph->vertices == NULL) {
       fputs("AddActivityNode: realloc failed\n", stderr);
       return;

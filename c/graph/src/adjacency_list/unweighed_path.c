@@ -4,9 +4,9 @@
 void buildUnweightedPath(const ListGraphPtr graph, VertexId *parent,
                          const VertexId source, const VertexId target) {
   Queue queue;
-  queueInit(&queue, graph->vertexNum);
+  queueInit(&queue, graph->vertNum);
 
-  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++)
+  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++)
     parent[vertex] = -1;
 
   enqueue(&queue, source);

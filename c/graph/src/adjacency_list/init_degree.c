@@ -2,7 +2,7 @@
 
 void InitIndegree(const ListGraphPtr graph, int *indegree, const QueuePtr queue) {
   ListVertexPtr vertex = graph->vertices;
-  const ListVertexPtr end = vertex + graph->vertexNum;
+  const ListVertexPtr end = vertex + graph->vertNum;
   int *dst = indegree;
 
   while (vertex != end) {

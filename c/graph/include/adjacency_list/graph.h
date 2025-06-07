@@ -3,41 +3,58 @@
 
 #include "share/type.h"
 
+enum { UNWEIGHTED = 0, WEIGHTED, FLOW_NETWORK, ANA };
+
+typedef WeightType FlowType, TimeType;
 typedef struct ListVertex_ ListVertex, *ListVertexPtr;
 typedef struct ListEdge_ ListEdge, *ListEdgePtr;
 typedef struct ListGraph_ ListGraph, *ListGraphPtr;
 
+typedef struct {
+  FlowType capacity, current;
+} FlowTail;
+typedef struct {
+  TimeType duration, earlyStart, lateStart, slack;
+} AnaTail;
+typedef union {
+  WeightType weight;
+  FlowTail flow;
+  AnaTail ana;
+} EdgeTail;
+
 struct ListVertex_ {
   int indegree;
   ListEdgePtr outEdges;
-  VertexData data;
+  VertexData userdata;
 };
 
 struct ListEdge_ {
   int flag;
   VertexId target;
-  WeightType weight;
   ListEdgePtr reverse;
   ListEdgePtr next;
-  EdgeData data;
+  EdgeData userdata;
+  EdgeTail tail[0];
 };
 
 struct ListGraph_ {
-  ListVertex *vertices;
-  int vertexNum;
+  int type;
   int edgeNum;
-  int capacity;
+  int vertCap;
+  int vertNum;
+  ListVertex *vertices;
 };
 
-void listGraphInit(ListGraphPtr graph, int capacity);
+void listGraphInit(ListGraphPtr graph, int type, int vertCap);
 
 void listGraphDestroy(ListGraphPtr graph);
 
-static inline void listGraphAddVertex(const ListGraphPtr graph, const VertexData data) {
-  graph->vertices[graph->vertexNum++] = (ListVertex){.outEdges = 0, .indegree = 0, .data = data};
-}
+void listGraphAddVertex(ListGraphPtr graph, VertexData data);
 
-void listGraphAddEdge(ListGraphPtr graph, VertexId source, VertexId target, WeightType weight,
-                      VertexData data, int directed);
+void listGraphReserve(ListGraphPtr graph, int vertNum);
+
+// value: weight (WEIGHTED) / capacity (FLOW_NETWORK) / duration (ANA)
+void listGraphAddEdge(ListGraphPtr graph, VertexId source, VertexId target, EdgeData data,
+                      WeightType value, int directed);
 
 #endif // GRAPH_GRAPH_H

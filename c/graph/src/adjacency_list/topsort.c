@@ -5,12 +5,12 @@
 
 void buildTopPath(const ListGraphPtr graph, VertexId parent[]) {
   int counter = 0;
-  int *indegree = malloc(graph->vertexNum * sizeof(int));
+  int *indegree = malloc(graph->vertNum * sizeof(int));
   Queue queue;
-  queueInit(&queue, graph->vertexNum);
+  queueInit(&queue, graph->vertNum);
 
   InitIndegree(graph, indegree, &queue);
-  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) parent[vertex] = -1;
+  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++) parent[vertex] = -1;
 
   while (queueEmpty(&queue)) {
     const VertexId vertex = *queueFront(&queue);
@@ -24,7 +24,7 @@ void buildTopPath(const ListGraphPtr graph, VertexId parent[]) {
     }
   }
 
-  if (counter != graph->vertexNum) fputs("buildTopPath: Has Cycle\n", stderr);
+  if (counter != graph->vertNum) fputs("buildTopPath: Has Cycle\n", stderr);
 
   free(indegree);
   queueFreeData(&queue);
@@ -32,9 +32,9 @@ void buildTopPath(const ListGraphPtr graph, VertexId parent[]) {
 
 void topSort(const ListGraphPtr graph, VertexId sortArray[]) {
   Queue queue;
-  queueInit(&queue, graph->vertexNum);
+  queueInit(&queue, graph->vertNum);
 
-  int *indegree = malloc(graph->vertexNum * sizeof(int));
+  int *indegree = malloc(graph->vertNum * sizeof(int));
   InitIndegree(graph, indegree, &queue);
 
   int counter = 0;
@@ -48,7 +48,7 @@ void topSort(const ListGraphPtr graph, VertexId sortArray[]) {
     }
   }
 
-  if (counter != graph->vertexNum) fputs("topSort: Has Cycle\n", stderr);
+  if (counter != graph->vertNum) fputs("topSort: Has Cycle\n", stderr);
 
   free(indegree);
   queueFreeData(&queue);

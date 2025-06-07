@@ -51,10 +51,10 @@ static void findArticulationStep(Package *package, VertexArg *vertex) {
 }
 
 void graphFindArticulation(const ListGraphPtr graph, LinkNode **articulations) {
-  VertexArg *vertices = malloc(sizeof(VertexArg) * graph->vertexNum);
+  VertexArg *vertices = malloc(sizeof(VertexArg) * graph->vertNum);
   if (vertices == NULL) return;
 
-  for (int i = 0; i < graph->vertexNum; i++) {
+  for (int i = 0; i < graph->vertNum; i++) {
     vertices[i].id = i;
     vertices[i].visited = 0;
     vertices[i].parent = NULL;

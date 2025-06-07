@@ -9,7 +9,7 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "share/vertex_edge_data.h"
+#include "share/type.h"
 
 typedef struct OnlyEdge_ OnlyEdge, *OnlyEdgePtr;
 typedef struct OnlyEdgeGraph_ OnlyEdgeGraph, *OnlyEdgeGraphPtr;

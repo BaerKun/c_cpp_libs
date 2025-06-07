@@ -7,8 +7,8 @@ typedef struct {
 } Package;         // 全局量
 
 static ListEdgePtr *getUnvisitedEdges(const ListGraphPtr graph) {
-  ListEdgePtr *unvisitedEdges = malloc(graph->vertexNum * sizeof(ListEdgePtr));
-  for (VertexId v = 0; v < graph->vertexNum; v++) unvisitedEdges[v] = graph->vertices[v].outEdges;
+  ListEdgePtr *unvisitedEdges = malloc(graph->vertNum * sizeof(ListEdgePtr));
+  for (VertexId v = 0; v < graph->vertNum; v++) unvisitedEdges[v] = graph->vertices[v].outEdges;
   return unvisitedEdges;
 }
 

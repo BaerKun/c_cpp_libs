@@ -53,12 +53,12 @@ static void findSccBackward(Package *package, VertexArg *vertex) {
 }
 
 void graphFindScc(const ListGraphPtr graph, int number[]) {
-  VertexArg *vertices = malloc(graph->vertexNum * sizeof(VertexArg));
+  VertexArg *vertices = malloc(graph->vertNum * sizeof(VertexArg));
   Stack stack;
-  stackInit(&stack, graph->vertexNum);
+  stackInit(&stack, graph->vertNum);
   Package package = {vertices, &stack, 0};
 
-  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
+  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++) {
     vertices[vertex].visitedOnce = 0;
     vertices[vertex].number = number + vertex;
     number[vertex] = -1;
@@ -66,7 +66,7 @@ void graphFindScc(const ListGraphPtr graph, int number[]) {
   }
 
   // 正序
-  const VertexArg *end = vertices + graph->vertexNum;
+  const VertexArg *end = vertices + graph->vertNum;
   for (VertexArg *vertex = vertices; vertex != end; vertex++) {
     if (vertex->visitedOnce == 0) findSccForward(&package, vertex);
   }

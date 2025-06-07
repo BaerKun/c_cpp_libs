@@ -16,13 +16,13 @@ static void printTreeHelper(const ListVertexPtr vertices, VertexId parent[], con
 }
 
 void PrimMinSpanningTree(const ListGraphPtr graph, VertexId parent[], const VertexId root) {
-  char *hasKnown = malloc(graph->vertexNum);
-  int *minWeight = malloc(graph->vertexNum * sizeof(int));
+  char *hasKnown = malloc(graph->vertNum);
+  int *minWeight = malloc(graph->vertNum * sizeof(int));
   Heap heap;
-  heapInit(&heap, graph->vertexNum);
+  heapInit(&heap, graph->vertNum);
   parent[root] = root;
 
-  for (VertexId vertex = 0; vertex < graph->vertexNum; vertex++) {
+  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++) {
     hasKnown[vertex] = 0;
     minWeight[vertex] = UNREACHABLE;
   }
@@ -38,8 +38,8 @@ void PrimMinSpanningTree(const ListGraphPtr graph, VertexId parent[], const Vert
          thisEdge = thisEdge->next) {
       const VertexId adjacentVertex = thisEdge->target;
 
-      if (!hasKnown[adjacentVertex] && minWeight[adjacentVertex] > thisEdge->weight) {
-        minWeight[adjacentVertex] = thisEdge->weight;
+      if (!hasKnown[adjacentVertex] && minWeight[adjacentVertex] > thisEdge->tail->weight) {
+        minWeight[adjacentVertex] = thisEdge->tail->weight;
         parent[adjacentVertex] = vertex;
         heapPush(&heap, minWeight + adjacentVertex);
       }
@@ -52,7 +52,7 @@ void PrimMinSpanningTree(const ListGraphPtr graph, VertexId parent[], const Vert
 }
 
 void printTree(const ListGraphPtr graph, VertexId parent[], const VertexId root) {
-  if (root < 0 || root >= graph->vertexNum || parent[root] != root) {
+  if (root < 0 || root >= graph->vertNum || parent[root] != root) {
     fputs("printTree: Invalid root vertex!\n", stderr);
     return;
   }
