@@ -5,13 +5,14 @@
 
 enum { UNWEIGHTED = 0, WEIGHTED, FLOW_NETWORK, ANA };
 
-typedef WeightType FlowType, TimeType;
+typedef int FlowType;
+typedef int TimeType;
 typedef struct ListVertex_ ListVertex, *ListVertexPtr;
 typedef struct ListEdge_ ListEdge, *ListEdgePtr;
 typedef struct ListGraph_ ListGraph, *ListGraphPtr;
 
 typedef struct {
-  FlowType capacity, current;
+  FlowType capacity, cost, current;
 } FlowTail;
 typedef struct {
   TimeType duration, earlyStart, lateStart, slack;
@@ -53,8 +54,7 @@ void listGraphAddVertex(ListGraphPtr graph, VertexData data);
 
 void listGraphReserve(ListGraphPtr graph, int vertNum);
 
-// value: weight (WEIGHTED) / capacity (FLOW_NETWORK) / duration (ANA)
 void listGraphAddEdge(ListGraphPtr graph, VertexId source, VertexId target, EdgeData data,
-                      WeightType value, int directed);
+                      const EdgeTail *tail, int directed);
 
 #endif // GRAPH_GRAPH_H

@@ -35,8 +35,10 @@ void listGraphReserve(const ListGraphPtr graph, const int vertNum) {
 }
 
 static ListEdgePtr newEdge(const int type, const VertexId target, const EdgeData data,
-                           const WeightType value) {
+                           const EdgeTail *const tail) {
   static const size_t edgeTailSize[] = {0, sizeof(WeightType), sizeof(FlowTail), sizeof(AnaTail)};
+  static const size_t tailCopySize[] = {0, sizeof(WeightType), sizeof(FlowType) * 2,
+                                        sizeof(TimeType)};
 
   const size_t tailSize = edgeTailSize[type];
   const ListEdgePtr edge = malloc(sizeof(ListEdge) + tailSize);
@@ -44,23 +46,25 @@ static ListEdgePtr newEdge(const int type, const VertexId target, const EdgeData
   edge->target = target;
   edge->next = NULL;
   edge->userdata = data;
-  if (tailSize > sizeof(WeightType)) {
-    memset(edge->tail, 0, tailSize - sizeof(WeightType));
+
+  if (type != UNWEIGHTED) {
+    const size_t copySize = tailCopySize[type];
+    memcpy(edge->tail, tail, copySize);
+    memset((void *)edge->tail + copySize, 0, tailSize - copySize);
   }
-  edge->tail->weight = value;
   return edge;
 }
 
 void listGraphAddEdge(const ListGraphPtr graph, const VertexId source, const VertexId target,
-                      const EdgeData data, const WeightType value, const int directed) {
+                      const EdgeData data, const EdgeTail *const tail, const int directed) {
   const ListVertexPtr sourceVertex = graph->vertices + source;
   const ListVertexPtr targetVertex = graph->vertices + target;
 
-  const ListEdgePtr edge = newEdge(graph->type, target, data, value);
+  const ListEdgePtr edge = newEdge(graph->type, target, data, tail);
   if (directed) {
     edge->reverse = NULL;
   } else {
-    const ListEdgePtr reverse = newEdge(graph->type, source, data, value);
+    const ListEdgePtr reverse = newEdge(graph->type, source, data, tail);
     reverse->reverse = edge;
     edge->reverse = reverse;
 
