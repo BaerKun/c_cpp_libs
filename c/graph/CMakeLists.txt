@@ -1,4 +1,4 @@
-file(GLOB SOURCES "src/adjacency_list/*.c" "src/matrix/*.c" "src/only_edge/*.c")
+file(GLOB SOURCES  "src/matrix/*.c" "src/edge_set/*.c" "src/share/*.c")
 add_library(graph STATIC ${SOURCES})
 target_include_directories(graph PUBLIC include)
 

@@ -9,7 +9,7 @@ add_subdirectory(socket)
 add_subdirectory(thread_pool)
 add_subdirectory(OR)
 add_subdirectory(expr)
-#add_subdirectory(infer)
+add_subdirectory(infer)
 
 add_executable(test _test.cpp)
 target_include_directories(test PUBLIC thread_pool infer)

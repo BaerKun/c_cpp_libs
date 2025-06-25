@@ -10,8 +10,9 @@ add_subdirectory(utils)
 add_subdirectory(tree)
 add_subdirectory(graph)
 add_subdirectory(arithmetic)
-add_subdirectory(simple_algorithm)
+add_subdirectory(misc)
 add_subdirectory(geometry)
+add_subdirectory(somefun)
 
 # test
 #add_subdirectory(_test)
