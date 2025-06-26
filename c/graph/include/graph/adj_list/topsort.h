@@ -3,8 +3,9 @@
 
 #include "graph.h"
 
-void topSort(ListGraphPtr graph, VertexId sortArray[]);
+void topoSort(const Graph *graph, const GraphInt indegree[], GraphId sort[]);
 
-void buildTopPath(ListGraphPtr graph, VertexId parent[]);
+void buildTopPath(const Graph *graph, const GraphInt indegree[],
+                  GraphId predecessor[]);
 
 #endif // GRAPH_TOPSORT_H

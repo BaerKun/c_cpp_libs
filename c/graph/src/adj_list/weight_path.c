@@ -1,81 +1,75 @@
 #include "graph/adj_list/weight_path.h"
 #include "queue.h"
 
-#define HEAP_DATA_TYPE int *
+#define HEAP_DATA_TYPE WeightType *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 
-void DijkstraWeightedPath(const ListGraphPtr graph, VertexId *parent, const VertexId source,
-                          const VertexId target) {
-  char *hasKnown = malloc(graph->vertNum);
-  int *distance = malloc(graph->vertNum * sizeof(int));
+#include <string.h>
+
+void DijkstraWeightedPath(const Graph *const graph, const WeightType weight[],
+                          GraphId predecessor[], const GraphId source,
+                          const GraphId target) {
   Heap heap;
   heapInit(&heap, graph->vertNum);
-
-  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++) {
-    hasKnown[vertex] = 0;
-    distance[vertex] = UNREACHABLE;
-  }
+  GraphBool *visited = calloc(graph->vertCap, sizeof(GraphBool));
+  WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
+  memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
 
   distance[source] = 0;
   heapPush(&heap, distance + source);
-
   while (heap.size) {
-    const VertexId vertex = (VertexId)(*heapTop(&heap) - distance);
+    const GraphId from = (GraphId)(*heapTop(&heap) - distance);
     heapPop(&heap);
-    if (vertex == target) return;
+    if (from == target) return;
 
-    hasKnown[vertex] = 1;
-    for (GraphEdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
-      const VertexId adjacentVertex = edge->target;
+    visited[from] = 1;
+    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
+      const GraphId to = edge->to;
 
-      if (hasKnown[adjacentVertex] ||
-          distance[adjacentVertex] <= distance[vertex] + edge->tail->weight)
+      if (visited[to] || distance[to] <= distance[from] + weight[edge->id])
         continue;
 
-      distance[adjacentVertex] = distance[vertex] + edge->tail->weight;
-      parent[adjacentVertex] = vertex;
-      heapPush(&heap, distance + adjacentVertex);
+      distance[to] = distance[from] + weight[edge->id];
+      predecessor[to] = from;
+      heapPush(&heap, distance + to);
     }
   }
 
-  free(hasKnown);
+  free(visited);
   free(distance);
   heapFreeData(&heap);
 }
 
 // 无负值圈
-void weightedPath(const ListGraphPtr graph, VertexId *parent, const VertexId source) {
-  char *isInQueue = malloc(graph->vertNum);
-  int *distance = malloc(graph->vertNum * sizeof(int));
+void weightedPath(const Graph *const graph, const WeightType weight[],
+                  GraphId predecessor[], const GraphId source) {
   Queue queue;
   queueInit(&queue, graph->vertNum);
-
-  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++) {
-    isInQueue[vertex] = 0;
-    distance[vertex] = UNREACHABLE;
-  }
+  GraphBool *isInQueue = calloc(graph->vertCap, sizeof(GraphBool));
+  WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
+  memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
 
   enqueue(&queue, source);
   distance[source] = 0;
   isInQueue[source] = 1;
 
   while (queue.size) {
-    const VertexId vertex = *queueFront(&queue);
+    const GraphId from = *queueFront(&queue);
     dequeue(&queue);
-    isInQueue[vertex] = 0;
+    isInQueue[from] = 0;
 
-    for (GraphEdgePtr edge = graph->vertices[vertex].outEdges; edge; edge = edge->next) {
-      const VertexId adjacentVertex = edge->target;
+    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
+      const GraphId to = edge->to;
 
-      if (distance[adjacentVertex] <= distance[vertex] + edge->tail->weight) continue;
+      if (distance[to] <= distance[from] + weight[edge->id]) continue;
 
-      distance[adjacentVertex] = distance[vertex] + edge->tail->weight;
-      parent[adjacentVertex] = vertex;
+      distance[to] = distance[from] + weight[edge->id];
+      predecessor[to] = from;
 
-      if (!isInQueue[adjacentVertex]) {
-        enqueue(&queue, adjacentVertex);
-        isInQueue[adjacentVertex] = 1;
+      if (!isInQueue[to]) {
+        enqueue(&queue, to);
+        isInQueue[to] = 1;
       }
     }
   }

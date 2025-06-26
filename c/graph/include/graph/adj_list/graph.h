@@ -1,7 +1,7 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include "graph/share/type.h"
+#include "graph/type.h"
 
 typedef struct GraphEdge_ GraphEdge, *GraphEdgePtr;
 typedef struct Graph_ Graph;

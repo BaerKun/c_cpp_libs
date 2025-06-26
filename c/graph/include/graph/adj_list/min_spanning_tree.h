@@ -3,8 +3,7 @@
 
 #include "graph.h"
 
-void PrimMinSpanningTree(ListGraphPtr graph, VertexId parent[], VertexId root);
-
-void printTree(ListGraphPtr graph, VertexId parent[], VertexId root);
+void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
+                         GraphId predecessor[], GraphId root);
 
 #endif // GRAPH_MIN_SPANNING_TREE_H

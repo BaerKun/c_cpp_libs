@@ -7,18 +7,18 @@ struct VertexAttribute_ {
   GraphBool visited;
   GraphId preorder; // dfs中第一次访问节点的序数
   GraphId lowest;   // 该点所在的所有圈的所有顶点中最小的序数（一个点也视作圈）
-  VertexAttribute *parent;
+  VertexAttribute *pred;
 };
 
 typedef struct {
-  GraphId topo;
   VertexAttribute *vertices;
   GraphEdgePtr *adjList;
   LinkNode **arts;
+  GraphId topo;
 } Package;
 
 static void findArticulationStep(Package *package, VertexAttribute *vertex) {
-  GraphBool isArt = 0;
+  GraphBool isArt = vertex->pred != NULL ? 1 : 0; // 排除根节点，单独处理
 
   vertex->visited = 1;
   vertex->lowest = vertex->preorder = package->topo++;
@@ -27,13 +27,12 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
     VertexAttribute *target = package->vertices + edge->to;
 
     if (!target->visited) {
-      target->parent = vertex;
+      target->pred = vertex;
       findArticulationStep(package, target);
 
       // 若target所在的圈不包含vertex,则vertex为割点
       // 使用isArt，只添加一次
-      if (target->lowest >= vertex->preorder && !isArt &&
-          vertex->parent != NULL) { // 排除根节点，单独处理
+      if (target->lowest >= vertex->preorder && !isArt) {
         isArt = 1;
         nodeInsert(package->arts, vertex->id);
       }
@@ -47,7 +46,7 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
      * 因为单向DFS在无圈图中的遍历是拓扑排序的；
      * 更新lowest
      */
-    else if (target != vertex->parent && target->preorder < vertex->lowest) {
+    else if (target != vertex->pred && target->preorder < vertex->lowest) {
       vertex->lowest = target->preorder;
     }
   }
@@ -55,21 +54,20 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
 
 void graphFindArticulation(const Graph *const graph,
                            LinkNodePtr *articulations) {
-  VertexAttribute *vertices = malloc(sizeof(VertexAttribute) * graph->vertCap);
-  if (vertices == NULL) return;
-
+  VertexAttribute *vertices = malloc(graph->vertCap * sizeof(VertexAttribute));
   for (GraphId i = 0; i < graph->vertCap; i++) {
     vertices[i].id = i;
     vertices[i].visited = 0;
-    vertices[i].parent = NULL;
+    vertices[i].pred = NULL;
   }
 
-  Package package = {0, vertices, graph->adjList, articulations};
+  Package package = {vertices, graph->adjList, articulations, 0};
   findArticulationStep(&package, vertices);
 
+  // 若根节点有两个及以上的子树，则为割点
   unsigned children = 0;
   for (GraphEdgePtr adj = graph->adjList[0]; adj; adj = adj->next) {
-    if (vertices[adj->to].parent == vertices && ++children == 2) {
+    if (vertices[adj->to].pred == vertices && ++children == 2) {
       nodeInsert(articulations, 0);
       break;
     }

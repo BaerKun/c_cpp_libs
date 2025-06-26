@@ -5,9 +5,10 @@
 
 typedef struct ResidualEdge_ ResidualEdge, *ResidualEdgePtr;
 struct ResidualEdge_ {
-  VertexId source, target;
-  FlowType capacity, flow;
-  GraphEdgePtr parallel; // 对应的原网络边
+  GraphId id;
+  GraphBool reverse;
+  GraphId from, to;
+  FlowType capacity, current;
   ResidualEdgePtr *prevNext;
   ResidualEdgePtr next;
 };
@@ -18,7 +19,8 @@ static void unlink(const ResidualEdgePtr edge) {
   if (next != NULL) next->prevNext = edge->prevNext;
 }
 
-static void insert(ResidualEdgePtr *const prevNext, const ResidualEdgePtr edge) {
+static void insert(ResidualEdgePtr *const prevNext,
+                   const ResidualEdgePtr edge) {
   const ResidualEdgePtr next = *prevNext;
   edge->next = next;
   *prevNext = edge;
@@ -26,21 +28,36 @@ static void insert(ResidualEdgePtr *const prevNext, const ResidualEdgePtr edge) 
   if (next != NULL) next->prevNext = &edge->next;
 }
 
+static void reverse(ResidualEdgePtr *const residual,
+                    const ResidualEdgePtr edge) {
+  const GraphId from = edge->from;
+  edge->reverse = !edge->reverse;
+  edge->from = edge->to;
+  edge->to = from;
+  unlink(edge);
+  insert(residual + edge->from, edge);
+}
+
 // 残余网络
-static ResidualEdgePtr *createResidualNetwork(const Graph *network) {
+static ResidualEdgePtr *createResidualNetwork(const Graph *network,
+                                              const FlowType capacity[]) {
   ResidualEdgePtr *residual =
-      malloc(sizeof(ResidualEdgePtr) * network->vertNum + sizeof(ResidualEdge) * network->edgeNum);
-  ResidualEdgePtr edges = (ResidualEdgePtr)(residual + network->vertNum);
-  for (int i = 0; i < network->vertNum; i++) {
-    residual[i] = NULL;
-    for (GraphEdgePtr edge = network->vertices[i].outEdges; edge != NULL; edge = edge->next) {
+      malloc(network->vertCap * sizeof(ResidualEdgePtr) +
+             network->edgeCap * sizeof(ResidualEdge));
+  ResidualEdgePtr edges = (ResidualEdgePtr)(residual + network->vertCap);
+
+  for (GraphId from = 0; from < network->vertCap; from++) {
+    residual[from] = NULL;
+    for (GraphEdgePtr edge = network->adjList[from]; edge != NULL;
+         edge = edge->next) {
       const ResidualEdgePtr copy = edges++;
-      copy->source = i;
-      copy->target = edge->target;
-      copy->capacity = edge->tail->flow.capacity;
-      copy->flow = 0;
-      copy->parallel = edge;
-      insert(residual + i, copy);
+      copy->id = edge->id;
+      copy->reverse = 0;
+      copy->from = from;
+      copy->to = edge->to;
+      copy->capacity = capacity[edge->id];
+      copy->current = 0;
+      insert(residual + from, copy);
     }
   }
   return residual;
@@ -52,19 +69,21 @@ static ResidualEdgePtr *createResidualNetwork(const Graph *network) {
  * 是因为这可能会导致capacity大的边被反复反转，
  * 不如最短路径收敛稳定 O(V * E^2)
  */
-static int bfs(const ResidualEdgePtr *residual, const QueuePtr queue, const VertexId source,
-               const VertexId sink, ResidualEdgePtr *const preious) {
+static int bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
+               ResidualEdgePtr pred[], const GraphId source,
+               const GraphId sink) {
   queueClear(queue);
   enqueue(queue, source);
   while (!queueEmpty(queue)) {
-    const VertexId vertex = *queueFront(queue);
+    const GraphId vertex = *queueFront(queue);
     dequeue(queue);
 
-    for (ResidualEdgePtr edge = residual[vertex]; edge != NULL; edge = edge->next) {
-      const VertexId target = edge->target;
-      if (preious[target] != NULL) continue;
+    for (ResidualEdgePtr edge = residual[vertex]; edge != NULL;
+         edge = edge->next) {
+      const GraphId target = edge->to;
+      if (pred[target] != NULL) continue;
 
-      preious[target] = edge;
+      pred[target] = edge;
       if (target == sink) return 1;
 
       enqueue(queue, target);
@@ -74,53 +93,51 @@ static int bfs(const ResidualEdgePtr *residual, const QueuePtr queue, const Vert
 }
 
 // 寻找路径可调整的flow = min(capacity - flow)
-static FlowType pathFlow(const ResidualEdgePtr *previous, const VertexId sink) {
+static FlowType pathFlow(const ResidualEdgePtr *pred, const GraphId sink) {
   FlowType flow = UNREACHABLE;
-  for (ResidualEdgePtr edge = previous[sink]; edge != NULL; edge = previous[edge->source]) {
-    if (edge->capacity - edge->flow < flow) flow = edge->capacity - edge->flow;
+  for (ResidualEdgePtr edge = pred[sink]; edge != NULL;
+       edge = pred[edge->from]) {
+    if (edge->capacity - edge->current < flow) {
+      flow = edge->capacity - edge->current;
+    }
   }
   return flow;
 }
 
-FlowType EdmondsKarpMaxFlow(const Graph *network, const VertexId source, const VertexId sink) {
+FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
+                            const GraphId source, const GraphId sink) {
   Queue queue;
   queueInit(&queue, network->vertNum);
-  ResidualEdgePtr *residual = createResidualNetwork(network);
-  ResidualEdgePtr *previous = malloc(sizeof(GraphEdgePtr) * network->vertNum);
+  ResidualEdgePtr *residual = createResidualNetwork(network, capacity);
+  ResidualEdgePtr *pred = malloc(sizeof(GraphEdgePtr) * network->vertCap);
+  FlowType *current = calloc(network->edgeCap, sizeof(FlowType));
 
   FlowType maxFlow = 0;
   while (1) {
-    memset(previous, 0, sizeof(GraphEdgePtr) * network->vertNum);
-    if (!bfs(residual, &queue, source, sink, previous)) break;
+    memset(pred, 0, sizeof(GraphEdgePtr) * network->vertCap);
+    if (!bfs(residual, &queue, pred, source, sink)) break;
 
-    const FlowType flow = pathFlow(previous, sink);
-    for (ResidualEdgePtr edge = previous[sink], prev; edge != NULL; edge = prev) {
-      prev = previous[edge->source];
-      edge->flow += flow;
+    const FlowType flow = pathFlow(pred, sink);
+    for (ResidualEdgePtr edge = pred[sink], prev; edge != NULL; edge = prev) {
+      prev = pred[edge->from];
+      edge->current += flow;
 
       // 如果edge是正向的，则flow的增加是同向的；否则相反
-      if (edge->target == edge->parallel->target) {
-        edge->parallel->tail->flow.current += flow;
-      } else {
-        edge->parallel->tail->flow.current -= flow;
-      }
+      current[edge->id] += edge->reverse ? -flow : flow;
 
-      if (edge->flow == edge->capacity) {
+      if (edge->current == edge->capacity) {
         // 若残余网络的边的flow满容，则反转，
         // 视作原网络边可释放的flow
-        const VertexId tmp = edge->target;
-        edge->target = edge->source;
-        edge->source = tmp;
-        edge->flow = 0;
-        unlink(edge);
-        insert(residual + edge->source, edge);
+        edge->current = 0;
+        reverse(residual, edge);
       }
     }
     maxFlow += flow;
   }
 
   free(residual);
-  free(previous);
+  free(pred);
+  free(current);
   queueFreeData(&queue);
   return maxFlow;
 }

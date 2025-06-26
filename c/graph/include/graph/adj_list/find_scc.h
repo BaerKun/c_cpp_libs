@@ -3,6 +3,6 @@
 
 #include "graph.h"
 
-void graphFindScc(const Graph *graph, int number[]);
+void graphFindScc(const Graph *graph, GraphId connectionId[]);
 
 #endif // GRAPH_FIND_SCC_H

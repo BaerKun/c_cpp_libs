@@ -1,28 +1,24 @@
 #include "graph/adj_list/unweighed_path.h"
 #include "queue.h"
+#include <string.h>
 
-void buildUnweightedPath(const ListGraphPtr graph, VertexId *parent,
-                         const VertexId source, const VertexId target) {
+void buildUnweightedPath(const Graph *const graph, GraphId predecessor[],
+                         const GraphId source, const GraphId target) {
   Queue queue;
   queueInit(&queue, graph->vertNum);
-
-  for (VertexId vertex = 0; vertex < graph->vertNum; vertex++)
-    parent[vertex] = -1;
+  memset(predecessor, 255, sizeof(GraphId) * graph->vertCap); // -1
 
   enqueue(&queue, source);
   while (queueEmpty(&queue)) {
-    const VertexId vertex = *queueFront(&queue);
+    const GraphId from = *queueFront(&queue);
     dequeue(&queue);
 
-    for (GraphEdgePtr edge = graph->vertices[vertex].outEdges; edge;
-         edge = edge->next) {
-      const VertexId adjacentVertex = edge->target;
-
-      if (parent[adjacentVertex] == -1) {
-        parent[adjacentVertex] = vertex;
-        if (adjacentVertex == target) return;
-
-        enqueue(&queue, adjacentVertex);
+    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
+      const GraphId to = edge->to;
+      if (predecessor[to] == -1) {
+        predecessor[to] = from;
+        if (to == target) return;
+        enqueue(&queue, to);
       }
     }
   }

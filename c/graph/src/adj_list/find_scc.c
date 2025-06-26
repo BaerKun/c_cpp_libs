@@ -1,84 +1,73 @@
 #include "graph/adj_list/find_scc.h"
 #include "graph/adj_list/edge.h"
-
-typedef struct VertexArg {
-  GraphBool flag;
-  GraphId *number;
-  GraphEdgePtr *outEdge;
-} VertexArg;
-
-#define STACK_DATA_TYPE VertexArg *
 #include "stack.h"
+#include <string.h>
 
 typedef struct {
-  VertexArg *vertices;
+  GraphEdgePtr *adjList;
+  GraphBool *flag;
+  GraphId *connectionId;
   StackPtr stack;
   GraphId counter;
 } Package;
 
-static void findSccForward(Package *package, VertexArg *vertex) {
+static void findSccForward(Package *package, const GraphId from) {
   // 拷贝，清空，以便之后加入反向边
-  GraphEdgePtr edge = *vertex->outEdge;
-  *vertex->outEdge = NULL;
+  GraphEdgePtr edge = package->adjList[from];
+  package->adjList[from] = NULL;
 
-  vertex->flag = 1;
-  for (GraphEdgePtr nextEdge; edge; edge = nextEdge) {
-    VertexArg *adjacentVertex = package->vertices + edge->to;
-    if (!adjacentVertex->flag) findSccForward(package, adjacentVertex);
+  package->flag[from] = 1;
+  for (GraphEdgePtr next; edge; edge = next) {
+    const GraphId to = edge->to;
+    if (!package->flag[to]) findSccForward(package, to);
 
-    // 边转向，加入thisEdge->outEdges链表
-    nextEdge = edge->next;
-    edge->to = (vertex - package->vertices);
-    edgeInsert(adjacentVertex->outEdge, edge);
+    // 边转向
+    next = edge->next;
+    edge->to = from;
+    edgeInsert(package->adjList + to, edge);
   }
-
-  stackPush(package->stack, vertex);
+  stackPush(package->stack, from);
 }
 
-static void findSccBackward(Package *package, VertexArg *vertex) {
-  GraphEdgePtr edge = *vertex->outEdge;
-  *vertex->outEdge = NULL;
+static void findSccBackward(Package *package, GraphId from) {
+  GraphEdgePtr edge = package->adjList[from];
+  package->adjList[from] = NULL;
 
-  *vertex->number = package->counter;
-  vertex->flag = 0;
-  for (GraphEdgePtr nextEdge; edge; edge = nextEdge) {
-    VertexArg *adjacentVertex = package->vertices + edge->to;
-    if (adjacentVertex->flag) findSccBackward(package, adjacentVertex);
+  package->connectionId[from] = package->counter;
+  package->flag[from] = 0;
+  for (GraphEdgePtr next; edge; edge = next) {
+    const GraphId to = edge->to;
+    if (package->flag[to]) findSccBackward(package, to);
 
     // 转回来
-    nextEdge = edge->next;
-    edge->to = (vertex - package->vertices);
-    edgeInsert(adjacentVertex->outEdge, edge);
+    next = edge->next;
+    edge->to = from;
+    edgeInsert(package->adjList + to, edge);
   }
 }
 
-void graphFindScc(const Graph *graph, int number[]) {
-  VertexArg *vertices = malloc(graph->vertNum * sizeof(VertexArg));
+void graphFindScc(const Graph *graph, GraphId connectionId[]) {
   Stack stack;
   stackInit(&stack, graph->vertNum);
-  Package package = {vertices, &stack, 0};
-
-  for (GraphId vertex = 0; vertex < graph->vertNum; vertex++) {
-    vertices[vertex].flag = 0;
-    vertices[vertex].number = number + vertex;
-    number[vertex] = -1;
-    vertices[vertex].outEdge = graph->adjList + vertex;
-  }
+  GraphBool *flag = calloc(graph->vertCap, sizeof(GraphBool));
+  Package package = {graph->adjList, flag, connectionId, &stack, 0};
+  memset(connectionId, 255, graph->vertCap * sizeof(GraphId));
 
   // 正序
-  const VertexArg *end = vertices + graph->vertNum;
-  for (VertexArg *vertex = vertices; vertex != end; vertex++) {
-    if (vertex->flag == 0) findSccForward(&package, vertex);
+  for (GraphId vert = 0; vert != graph->vertCap; ++vert) {
+    if (flag[vert] == 0) {
+      findSccForward(&package, vert);
+    }
   }
 
   // 逆序
-  while (stack.top != 0) {
-    VertexArg *vertex = *stackTop(&stack);
+  while (!stackEmpty(&stack)) {
+    const GraphId vert = *stackTop(&stack);
     stackPop(&stack);
-    if (vertex->flag == 1) findSccBackward(&package, vertex);
+    if (flag[vert] == 1) findSccBackward(&package, vert);
     ++package.counter;
   }
 
-  free(vertices);
+  free(flag);
   stackFreeData(&stack);
 }
