@@ -1,7 +1,7 @@
 #ifndef GRAPH_FIND_ARTICULATION_H
 #define GRAPH_FIND_ARTICULATION_H
 
-#include "graph.h"
+#include "graph/graph.h"
 #include "link_node.h"
 
 /*

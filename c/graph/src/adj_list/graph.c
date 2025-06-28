@@ -1,5 +1,5 @@
-#include "graph/adj_list/graph.h"
-#include "graph/adj_list/edge.h"
+#include "graph/graph.h"
+#include "private/edge.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,7 +21,7 @@ static void destroyAttributeList(Attribute *attr) {
 }
 
 void graphDestroy(const Graph *const graph) {
-  const GraphEdgePtr *const end = graph->adjList + graph->vertNum;
+  const GraphEdgePtr *const end = graph->adjList + graph->vertCap;
   for (const GraphEdgePtr *ptr = graph->adjList; ptr != end; ptr++) {
     for (GraphEdgePtr edge = *ptr, next; edge; edge = next) {
       next = edge->next;
@@ -51,19 +51,28 @@ GraphId graphAddEdge(Graph *const graph, const GraphId from, const GraphId to,
   return id;
 }
 
+void graphGetIndegree(const Graph *graph, GraphInt indegree[]) {
+  memset(indegree, 0, graph->vertCap * sizeof(GraphInt));
+  for (GraphId from = 0; from < graph->vertCap; ++from) {
+    for (const GraphEdge *edge = graph->adjList[from]; edge;
+         edge = edge->next) {
+      indegree[edge->to]++;
+    }
+  }
+}
+
 static void strHash16(const char str[16], GraphId hash[2]) {
   hash[0] = hash[1] = 0;
   strncpy((char *)hash, str, 16);
 }
 
-void *graphAddEdgeAttribute(Graph *graph, const char name[16],
-                            const GraphSize sizeOfElem) {
+void graphAddEdgeAttribute(Graph *graph, const char name[16],
+                           const GraphSize sizeOfElem) {
   Attribute *attr = malloc(sizeof(Attribute));
   strHash16(name, attr->hash);
-  attr->vector = malloc(graph->edgeNum * sizeOfElem);
+  attr->vector = malloc(graph->edgeCap * sizeOfElem);
   attr->next = graph->edgeAttr;
   graph->edgeAttr = attr;
-  return attr->vector;
 }
 
 void *graphGetEdgeAttribute(const Graph *graph, const char name[16]) {

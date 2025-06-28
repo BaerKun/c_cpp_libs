@@ -7,21 +7,22 @@
 
 #include <string.h>
 
-void DijkstraWeightedPath(const Graph *const graph, const WeightType weight[],
-                          GraphId predecessor[], const GraphId source,
-                          const GraphId target) {
+void DijkstraShortest(const Graph *const graph, const WeightType weight[],
+                      GraphId predecessor[], const GraphId source,
+                      const GraphId target) {
   Heap heap;
   heapInit(&heap, graph->vertNum);
   GraphBool *visited = calloc(graph->vertCap, sizeof(GraphBool));
   WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
   memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
+  memset(predecessor, 255, graph->vertCap * sizeof(GraphId));
 
   distance[source] = 0;
   heapPush(&heap, distance + source);
-  while (heap.size) {
+  while (!heapEmpty(&heap)) {
     const GraphId from = (GraphId)(*heapTop(&heap) - distance);
     heapPop(&heap);
-    if (from == target) return;
+    if (from == target) goto END;
 
     visited[from] = 1;
     for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
@@ -35,20 +36,21 @@ void DijkstraWeightedPath(const Graph *const graph, const WeightType weight[],
       heapPush(&heap, distance + to);
     }
   }
-
+END:
   free(visited);
   free(distance);
   heapFreeData(&heap);
 }
 
 // 无负值圈
-void weightedPath(const Graph *const graph, const WeightType weight[],
-                  GraphId predecessor[], const GraphId source) {
+void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
+                         GraphId predecessor[], const GraphId source) {
   Queue queue;
   queueInit(&queue, graph->vertNum);
   GraphBool *isInQueue = calloc(graph->vertCap, sizeof(GraphBool));
   WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
   memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
+  memset(predecessor, 255, graph->vertCap * sizeof(GraphId));
 
   enqueue(&queue, source);
   distance[source] = 0;

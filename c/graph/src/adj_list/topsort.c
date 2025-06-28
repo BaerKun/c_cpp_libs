@@ -1,17 +1,16 @@
 #include "graph/adj_list/topsort.h"
-#include "graph/adj_list/indegree.h"
+#include "private/indegree.h"
 #include <stdio.h>
 #include <string.h>
 
-void buildTopPath(const Graph *const graph, const GraphInt indegree[],
-                  GraphId predecessor[]) {
+void topoPath(const Graph *const graph, const GraphInt indegree[],
+              GraphId predecessor[]) {
   GraphInt counter = 0;
   Queue queue;
-  GraphInt *copyIndeg;
-  indegreeInit(indegree, graph->vertCap, &copyIndeg, &queue);
+  GraphInt *copyIndeg = indegreeInit(indegree, &queue, graph->vertCap);
   memset(predecessor, 255, graph->vertCap * sizeof(GraphId)); // -1
 
-  while (queueEmpty(&queue)) {
+  while (!queueEmpty(&queue)) {
     const GraphId from = *queueFront(&queue);
     dequeue(&queue);
     ++counter;
@@ -38,11 +37,10 @@ void buildTopPath(const Graph *const graph, const GraphInt indegree[],
 void topoSort(const Graph *const graph, const GraphInt indegree[],
               GraphId sort[]) {
   Queue queue;
-  GraphInt *copyIndeg;
-  indegreeInit(indegree, graph->vertCap, &copyIndeg, &queue);
+  GraphInt *copyIndeg = indegreeInit(indegree, &queue, graph->vertCap);
 
   GraphInt counter = 0;
-  while (queueEmpty(&queue)) {
+  while (!queueEmpty(&queue)) {
     const GraphId from = *queueFront(&queue);
     dequeue(&queue);
     sort[counter++] = from;

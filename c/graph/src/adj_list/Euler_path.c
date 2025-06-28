@@ -1,5 +1,4 @@
 #include "graph/adj_list/Euler_path.h"
-
 #include <string.h>
 
 // 递归实现

@@ -45,8 +45,8 @@ static inline void heapInit(const HeapPtr heap, const int capacity) {
 
 static void heapPush(const HeapPtr heap, HEAP_DATA_TYPE const data) {
   int i, child;
-  for (i = ++heap->size; i && HEAP_LESS_THAN(data, heap->prev[child = i >> 1]);
-       i = child)
+  for (i = ++heap->size;
+       ((child = i >> 1)) && HEAP_LESS_THAN(data, heap->prev[child]); i = child)
     heap->prev[i] = heap->prev[child];
 
   heap->prev[i] = data;

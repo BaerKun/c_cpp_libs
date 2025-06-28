@@ -1,9 +1,9 @@
 #ifndef GRAPH_MIN_SPANNING_TREE_H
 #define GRAPH_MIN_SPANNING_TREE_H
 
-#include "edge_set.h"
+#include "graph/type.h"
 
-void KruskalMinSpanningTree(const GraphEdgeSetElem *set,
+void KruskalMinSpanningTree(const GraphEdgeEndpoint *set,
                             const WeightType weight[], GraphSize edgeNum,
                             GraphSize vertNum, GraphId tree[]);
 

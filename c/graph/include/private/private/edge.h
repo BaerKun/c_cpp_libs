@@ -1,7 +1,7 @@
 #ifndef EDGE_LIST_H
 #define EDGE_LIST_H
 
-#include "graph.h"
+#include "graph/graph.h"
 
 static inline void edgeInsert(GraphEdgePtr *const prevNextPtr, const GraphEdgePtr edge) {
   edge->next = *prevNextPtr;

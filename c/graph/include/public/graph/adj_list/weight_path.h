@@ -1,13 +1,13 @@
 #ifndef GRAPH_WEIGHT_PATH_H
 #define GRAPH_WEIGHT_PATH_H
 
-#include "graph.h"
+#include "graph/graph.h"
 
-void DijkstraWeightedPath(const Graph *graph, const WeightType weight[],
+void DijkstraShortest(const Graph *graph, const WeightType weight[],
                           GraphId predecessor[], GraphId source,
                           GraphId target);
 
-void weightedPath(const Graph *graph, const WeightType weight[],
+void BellmanFordShortest(const Graph *graph, const WeightType weight[],
                   GraphId predecessor[], GraphId source);
 
 #endif // GRAPH_WEIGHT_PATH_H

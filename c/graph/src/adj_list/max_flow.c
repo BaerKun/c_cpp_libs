@@ -46,10 +46,9 @@ static ResidualEdgePtr *createResidualNetwork(const Graph *network,
              network->edgeCap * sizeof(ResidualEdge));
   ResidualEdgePtr edges = (ResidualEdgePtr)(residual + network->vertCap);
 
-  for (GraphId from = 0; from < network->vertCap; from++) {
+  for (GraphId from = 0; from < network->vertCap; ++from) {
     residual[from] = NULL;
-    for (GraphEdgePtr edge = network->adjList[from]; edge != NULL;
-         edge = edge->next) {
+    for (GraphEdgePtr edge = network->adjList[from]; edge; edge = edge->next) {
       const ResidualEdgePtr copy = edges++;
       copy->id = edge->id;
       copy->reverse = 0;
@@ -69,24 +68,23 @@ static ResidualEdgePtr *createResidualNetwork(const Graph *network,
  * 是因为这可能会导致capacity大的边被反复反转，
  * 不如最短路径收敛稳定 O(V * E^2)
  */
-static int bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
-               ResidualEdgePtr pred[], const GraphId source,
-               const GraphId sink) {
+static GraphBool bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
+                     ResidualEdgePtr pred[], const GraphId source,
+                     const GraphId sink) {
   queueClear(queue);
   enqueue(queue, source);
   while (!queueEmpty(queue)) {
-    const GraphId vertex = *queueFront(queue);
+    const GraphId from = *queueFront(queue);
     dequeue(queue);
 
-    for (ResidualEdgePtr edge = residual[vertex]; edge != NULL;
-         edge = edge->next) {
-      const GraphId target = edge->to;
-      if (pred[target] != NULL) continue;
+    for (ResidualEdgePtr edge = residual[from]; edge; edge = edge->next) {
+      const GraphId to = edge->to;
+      if (pred[to] != NULL || to == source) continue;
 
-      pred[target] = edge;
-      if (target == sink) return 1;
+      pred[to] = edge;
+      if (to == sink) return 1;
 
-      enqueue(queue, target);
+      enqueue(queue, to);
     }
   }
   return 0;
@@ -95,9 +93,8 @@ static int bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
 // 寻找路径可调整的flow = min(capacity - flow)
 static FlowType pathFlow(const ResidualEdgePtr *pred, const GraphId sink) {
   FlowType flow = UNREACHABLE;
-  for (ResidualEdgePtr edge = pred[sink]; edge != NULL;
-       edge = pred[edge->from]) {
-    if (edge->capacity - edge->current < flow) {
+  for (ResidualEdgePtr edge = pred[sink]; edge; edge = pred[edge->from]) {
+    if (flow > edge->capacity - edge->current) {
       flow = edge->capacity - edge->current;
     }
   }
@@ -105,25 +102,26 @@ static FlowType pathFlow(const ResidualEdgePtr *pred, const GraphId sink) {
 }
 
 FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
-                            const GraphId source, const GraphId sink) {
+                            FlowType flow[], const GraphId source,
+                            const GraphId sink) {
   Queue queue;
   queueInit(&queue, network->vertNum);
   ResidualEdgePtr *residual = createResidualNetwork(network, capacity);
-  ResidualEdgePtr *pred = malloc(sizeof(GraphEdgePtr) * network->vertCap);
-  FlowType *current = calloc(network->edgeCap, sizeof(FlowType));
+  ResidualEdgePtr *pred = malloc(network->vertCap * sizeof(ResidualEdgePtr));
+  memset(flow, 0, network->edgeCap * sizeof(FlowType));
 
   FlowType maxFlow = 0;
   while (1) {
-    memset(pred, 0, sizeof(GraphEdgePtr) * network->vertCap);
+    memset(pred, 0, network->vertCap * sizeof(ResidualEdgePtr));
     if (!bfs(residual, &queue, pred, source, sink)) break;
 
-    const FlowType flow = pathFlow(pred, sink);
+    const FlowType stepFlow = pathFlow(pred, sink);
     for (ResidualEdgePtr edge = pred[sink], prev; edge != NULL; edge = prev) {
       prev = pred[edge->from];
-      edge->current += flow;
+      edge->current += stepFlow;
 
       // 如果edge是正向的，则flow的增加是同向的；否则相反
-      current[edge->id] += edge->reverse ? -flow : flow;
+      flow[edge->id] += edge->reverse ? -stepFlow : stepFlow;
 
       if (edge->current == edge->capacity) {
         // 若残余网络的边的flow满容，则反转，
@@ -132,12 +130,11 @@ FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
         reverse(residual, edge);
       }
     }
-    maxFlow += flow;
+    maxFlow += stepFlow;
   }
 
   free(residual);
   free(pred);
-  free(current);
   queueFreeData(&queue);
   return maxFlow;
 }

@@ -14,7 +14,7 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
   WeightType *minWeight = malloc(graph->vertCap * sizeof(WeightType));
   memset(minWeight, 0x7f, graph->vertCap * sizeof(WeightType));
 
-  predecessor[root] = root;
+  predecessor[root] = -1;
   heapPush(&heap, minWeight + root);
   while (heap.size) {
     const GraphId from = (GraphId)(*heapTop(&heap) - minWeight);

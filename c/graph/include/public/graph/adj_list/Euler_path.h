@@ -1,7 +1,7 @@
 #ifndef GRAPH_EULER_PATH_H
 #define GRAPH_EULER_PATH_H
 
-#include "graph.h"
+#include "graph/graph.h"
 
 #define LINK_NODE_DATA_TYPE GraphId
 #include "link_node.h"

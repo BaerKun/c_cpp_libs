@@ -2,14 +2,14 @@
 #include "queue.h"
 #include <string.h>
 
-void buildUnweightedPath(const Graph *const graph, GraphId predecessor[],
+void unweightedShortest(const Graph *const graph, GraphId predecessor[],
                          const GraphId source, const GraphId target) {
   Queue queue;
   queueInit(&queue, graph->vertNum);
   memset(predecessor, 255, sizeof(GraphId) * graph->vertCap); // -1
 
   enqueue(&queue, source);
-  while (queueEmpty(&queue)) {
+  while (!queueEmpty(&queue)) {
     const GraphId from = *queueFront(&queue);
     dequeue(&queue);
 

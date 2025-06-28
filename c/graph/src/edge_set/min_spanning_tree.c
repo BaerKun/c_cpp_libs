@@ -6,7 +6,7 @@
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 
-void KruskalMinSpanningTree(const GraphEdgeSetElem *set, const WeightType weight[],
+void KruskalMinSpanningTree(const GraphEdgeEndpoint *set, const WeightType weight[],
                             const GraphSize edgeNum, const GraphSize vertNum,
                             GraphId *tree) {
   Heap heap;
@@ -25,7 +25,7 @@ void KruskalMinSpanningTree(const GraphEdgeSetElem *set, const WeightType weight
     heapPop(&heap);
 
     const GraphId id = w - weight;
-    const GraphEdgeSetElem *edge = set + id;
+    const GraphEdgeEndpoint *edge = set + id;
     const int root1 = disjointSetFind(disjointSet, edge->from);
     const int root2 = disjointSetFind(disjointSet, edge->to);
 
