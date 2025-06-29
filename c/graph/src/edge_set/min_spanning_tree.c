@@ -2,7 +2,7 @@
 #include "disjoint_set.h"
 #include <stdio.h>
 
-#define HEAP_DATA_TYPE const WeightType *
+#define HEAP_ELEM_TYPE const WeightType *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 

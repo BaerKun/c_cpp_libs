@@ -4,12 +4,12 @@
 #include "geom_utils.h"
 #include "point_set.h"
 
-#define SORT_DATA_TYPE Point2f
+#define SORT_ELEM_TYPE Point2f
 #define SORT_LESS_THAN(p, q) (p.x < q.x)
 
 #include "sort.h"
 
-#define STACK_DATA_TYPE Point2f
+#define STACK_ELEM_TYPE Point2f
 
 #include "stack.h"
 

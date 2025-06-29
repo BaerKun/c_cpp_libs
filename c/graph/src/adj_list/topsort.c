@@ -1,28 +1,24 @@
 #include "graph/adj_list/topsort.h"
 #include "private/indegree.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void topoPath(const Graph *const graph, const GraphInt indegree[],
               GraphId predecessor[]) {
   GraphInt counter = 0;
-  Queue queue;
+  GraphQueue queue;
   GraphInt *copyIndeg = indegreeInit(indegree, &queue, graph->vertCap);
   memset(predecessor, 255, graph->vertCap * sizeof(GraphId)); // -1
 
-  while (!queueEmpty(&queue)) {
-    const GraphId from = *queueFront(&queue);
-    dequeue(&queue);
+  while (!graphQueueEmpty(&queue)) {
+    const GraphId from = graphQueuePop(&queue);
     ++counter;
 
     for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
       const GraphId to = edge->to;
-      if (predecessor[to] == -1) {
-        predecessor[to] = from;
-      }
-      if (--copyIndeg[to] == 0) {
-        enqueue(&queue, to);
-      }
+      if (predecessor[to] == -1) predecessor[to] = from;
+      if (--copyIndeg[to] == 0) graphQueuePush(&queue, to);
     }
   }
 
@@ -31,24 +27,21 @@ void topoPath(const Graph *const graph, const GraphInt indegree[],
   }
 
   free(copyIndeg);
-  queueFreeData(&queue);
+  graphQueueRelease(&queue);
 }
 
 void topoSort(const Graph *const graph, const GraphInt indegree[],
               GraphId sort[]) {
-  Queue queue;
+  GraphQueue queue;
   GraphInt *copyIndeg = indegreeInit(indegree, &queue, graph->vertCap);
 
   GraphInt counter = 0;
-  while (!queueEmpty(&queue)) {
-    const GraphId from = *queueFront(&queue);
-    dequeue(&queue);
+  while (!graphQueueEmpty(&queue)) {
+    const GraphId from = graphQueuePop(&queue);
     sort[counter++] = from;
 
     for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
-      if (--copyIndeg[edge->to] == 0) {
-        enqueue(&queue, edge->to);
-      }
+      if (--copyIndeg[edge->to] == 0) graphQueuePush(&queue, edge->to);
     }
   }
 
@@ -57,5 +50,5 @@ void topoSort(const Graph *const graph, const GraphInt indegree[],
   }
 
   free(copyIndeg);
-  queueFreeData(&queue);
+  graphQueueRelease(&queue);
 }

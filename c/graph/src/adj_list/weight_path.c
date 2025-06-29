@@ -1,7 +1,7 @@
 #include "graph/adj_list/weight_path.h"
-#include "queue.h"
+#include "private/queue.h"
 
-#define HEAP_DATA_TYPE WeightType *
+#define HEAP_ELEM_TYPE WeightType *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 
@@ -45,20 +45,19 @@ END:
 // 无负值圈
 void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId source) {
-  Queue queue;
-  queueInit(&queue, graph->vertNum);
+  GraphQueue queue;
+  graphQueueInit(&queue, graph->vertNum);
   GraphBool *isInQueue = calloc(graph->vertCap, sizeof(GraphBool));
   WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
   memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
   memset(predecessor, 255, graph->vertCap * sizeof(GraphId));
 
-  enqueue(&queue, source);
   distance[source] = 0;
   isInQueue[source] = 1;
+  graphQueuePush(&queue, source);
 
-  while (queue.size) {
-    const GraphId from = *queueFront(&queue);
-    dequeue(&queue);
+  while (!graphQueueEmpty(&queue)) {
+    const GraphId from = graphQueuePop(&queue);
     isInQueue[from] = 0;
 
     for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
@@ -70,7 +69,7 @@ void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
       predecessor[to] = from;
 
       if (!isInQueue[to]) {
-        enqueue(&queue, to);
+        graphQueuePush(&queue, to);
         isInQueue[to] = 1;
       }
     }
@@ -78,5 +77,5 @@ void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
 
   free(isInQueue);
   free(distance);
-  queueFreeData(&queue);
+  graphQueueRelease(&queue);
 }

@@ -1,30 +1,29 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include <stdlib.h>
-
-#ifndef QUEUE_DATA_TYPE
-#define QUEUE_DATA_TYPE int
+#ifndef QUEUE_ELEM_TYPE
+#define QUEUE_ELEM_TYPE int
 #endif
 
+#include <stdint.h>
+#include <stdlib.h>
+
+typedef QUEUE_ELEM_TYPE QueueElemType_;
 typedef struct Queue_ Queue, *QueuePtr;
 
 struct Queue_ {
-  QUEUE_DATA_TYPE *data;
-  int front;
-  int rear;
-  int size;
-  int capacity;
+  QueueElemType_ *data;
+  uint64_t capacity, size;
+  uint64_t front, rear;
 };
 
-static inline void queueInit(const QueuePtr queue, const int capacity) {
-  queue->data = (QUEUE_DATA_TYPE *)malloc(sizeof(QUEUE_DATA_TYPE) * capacity);
+static inline void queueInit(const QueuePtr queue, const uint64_t capacity) {
+  queue->data = (QueueElemType_ *)malloc(sizeof(QueueElemType_) * capacity);
   queue->front = queue->rear = queue->size = 0;
   queue->capacity = capacity;
 }
 
-static inline void enqueue(const QueuePtr queue,
-                           QUEUE_DATA_TYPE const element) {
+static inline void enqueue(const QueuePtr queue, QueueElemType_ const element) {
   queue->data[queue->rear] = element;
   if (++queue->rear == queue->capacity) queue->rear = 0;
   ++queue->size;
@@ -39,7 +38,7 @@ static inline void queueClear(const QueuePtr queue) {
   queue->front = queue->rear = queue->size = 0;
 }
 
-static inline QUEUE_DATA_TYPE *queueFront(const Queue *const queue) {
+static inline QueueElemType_ *queueFront(const Queue *const queue) {
   return queue->data + queue->front;
 }
 

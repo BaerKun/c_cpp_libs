@@ -1,7 +1,7 @@
 #ifndef GRAPH_TOPSORT_H
 #define GRAPH_TOPSORT_H
 
-#include "graph/graph.h"
+#include "graph/type.h"
 
 void topoSort(const Graph *graph, const GraphInt indegree[], GraphId sort[]);
 

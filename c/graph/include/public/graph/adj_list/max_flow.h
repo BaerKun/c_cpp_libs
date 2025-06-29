@@ -1,7 +1,7 @@
 #ifndef MAX_FLOW_H
 #define MAX_FLOW_H
 
-#include "graph/graph.h"
+#include "graph/type.h"
 typedef WeightType FlowType;
 
 FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],

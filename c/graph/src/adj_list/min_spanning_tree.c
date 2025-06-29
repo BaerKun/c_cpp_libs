@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define HEAP_DATA_TYPE WeightType *
+#define HEAP_ELEM_TYPE WeightType *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
 #include "heap.h"
 

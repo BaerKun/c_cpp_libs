@@ -1,13 +1,14 @@
 #include "graph/adj_list/find_scc.h"
 #include "private/edge.h"
-#include "stack.h"
+#include "private/stack.h"
 #include <string.h>
+#include <stdlib.h>
 
 typedef struct {
   GraphEdgePtr *adjList;
   GraphBool *flag;
   GraphId *connectionId;
-  StackPtr stack;
+  GraphStack *stack;
   GraphId counter;
 } Package;
 
@@ -26,7 +27,7 @@ static void findSccForward(Package *package, const GraphId from) {
     edge->to = from;
     edgeInsert(package->adjList + to, edge);
   }
-  stackPush(package->stack, from);
+  graphStackPush(package->stack, from);
 }
 
 static void findSccBackward(Package *package, GraphId from) {
@@ -47,8 +48,8 @@ static void findSccBackward(Package *package, GraphId from) {
 }
 
 void graphFindScc(const Graph *graph, GraphId connectionId[]) {
-  Stack stack;
-  stackInit(&stack, graph->vertNum);
+  GraphStack stack;
+  graphStackInit(&stack, graph->vertNum);
   GraphBool *flag = calloc(graph->vertCap, sizeof(GraphBool));
   Package package = {graph->adjList, flag, connectionId, &stack, 0};
   memset(connectionId, 255, graph->vertCap * sizeof(GraphId));
@@ -61,13 +62,12 @@ void graphFindScc(const Graph *graph, GraphId connectionId[]) {
   }
 
   // 逆序
-  while (!stackEmpty(&stack)) {
-    const GraphId vert = *stackTop(&stack);
-    stackPop(&stack);
+  while (!graphStackEmpty(&stack)) {
+    const GraphId vert = graphStackPop(&stack);
     if (flag[vert] == 1) findSccBackward(&package, vert);
     ++package.counter;
   }
 
   free(flag);
-  stackFreeData(&stack);
+  graphStackRelease(&stack);
 }

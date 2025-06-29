@@ -1,7 +1,7 @@
 #ifndef GRAPH_UNWEIGHED_PATH_H
 #define GRAPH_UNWEIGHED_PATH_H
 
-#include "graph/graph.h"
+#include "graph/type.h"
 
 void unweightedShortest(const Graph *graph, GraphId predecessor[],
                          GraphId source, GraphId target);

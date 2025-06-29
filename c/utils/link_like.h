@@ -21,7 +21,7 @@ static inline void linkClear(LinkLike *const link) {
 }
 
 static inline void linkPush(LinkLike *const link,
-                            LINK_NODE_DATA_TYPE const data) {
+                            LinkNodeElemType_ const data) {
   nodeInsert(&link->head, data);
   if (link->tail == &link->head) link->tail = &link->head->next;
 }
@@ -31,12 +31,12 @@ static inline void linkPop(LinkLike *const link) {
   if (link->head == NULL) link->tail = &link->head;
 }
 
-static inline LINK_NODE_DATA_TYPE *linkTop(const LinkLike *const link) {
+static inline LinkNodeElemType_ *linkTop(const LinkLike *const link) {
   return &link->head->data;
 }
 
 static inline void linkEnqueue(LinkLike *const link,
-                               LINK_NODE_DATA_TYPE const data) {
+                               LinkNodeElemType_ const data) {
   const LinkNodePtr node = newNode(data);
   *link->tail = node;
   link->tail = &node->next;

@@ -13,7 +13,7 @@ struct VertexAttribute_ {
 typedef struct {
   VertexAttribute *vertices;
   GraphEdgePtr *adjList;
-  LinkNode **arts;
+  GraphLinkedPath **arts;
   GraphId topo;
 } Package;
 
@@ -34,7 +34,7 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
       // 使用isArt，只添加一次
       if (target->lowest >= vertex->preorder && !isArt) {
         isArt = 1;
-        nodeInsert(package->arts, vertex->id);
+        graphPathInsert(package->arts, vertex->id);
       }
 
       // 递归更新lowest
@@ -53,7 +53,7 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
 }
 
 void graphFindArticulation(const Graph *const graph,
-                           LinkNodePtr *articulations) {
+                           GraphLinkedPath **articulations) {
   VertexAttribute *vertices = malloc(graph->vertCap * sizeof(VertexAttribute));
   for (GraphId i = 0; i < graph->vertCap; i++) {
     vertices[i].id = i;
@@ -68,7 +68,7 @@ void graphFindArticulation(const Graph *const graph,
   unsigned children = 0;
   for (GraphEdgePtr adj = graph->adjList[0]; adj; adj = adj->next) {
     if (vertices[adj->to].pred == vertices && ++children == 2) {
-      nodeInsert(articulations, 0);
+      graphPathInsert(articulations, 0);
       break;
     }
   }

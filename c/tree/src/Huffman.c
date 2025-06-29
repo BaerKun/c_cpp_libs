@@ -5,7 +5,7 @@ typedef struct HeapData_ {
   WeightType weight;
 } HeapData;
 
-#define HEAP_DATA_TYPE HeapData
+#define HEAP_ELEM_TYPE HeapData
 #define HEAP_LESS_THAN(a, b) (a.weight < b.weight)
 #include "heap.h"
 

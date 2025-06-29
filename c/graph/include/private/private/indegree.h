@@ -1,12 +1,9 @@
 #ifndef GRAPH_INIT_INDEGREE_H
 #define GRAPH_INIT_INDEGREE_H
 
-#include "graph/graph.h"
+#include "private/queue.h"
 
-#define QUEUE_DATA_TYPE GraphId
-#include "queue.h"
-
-GraphInt *indegreeInit(const GraphInt indegree[], QueuePtr queue,
+GraphInt *indegreeInit(const GraphInt indegree[], GraphQueue *queue,
                        GraphSize vertCap);
 
 #endif // GRAPH_INIT_INDEGREE_H

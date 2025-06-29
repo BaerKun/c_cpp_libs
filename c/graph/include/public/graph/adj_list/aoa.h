@@ -1,7 +1,7 @@
 #ifndef AOA_H
 #define AOA_H
 
-#include "graph/graph.h"
+#include "graph/type.h"
 
 typedef WeightType TimeType;
 

@@ -1,5 +1,5 @@
 #include "graph/adj_list/max_flow.h"
-#include "queue.h"
+#include "private/queue.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -68,14 +68,13 @@ static ResidualEdgePtr *createResidualNetwork(const Graph *network,
  * 是因为这可能会导致capacity大的边被反复反转，
  * 不如最短路径收敛稳定 O(V * E^2)
  */
-static GraphBool bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
+static GraphBool bfs(const ResidualEdgePtr *residual, GraphQueue *const queue,
                      ResidualEdgePtr pred[], const GraphId source,
                      const GraphId sink) {
-  queueClear(queue);
-  enqueue(queue, source);
-  while (!queueEmpty(queue)) {
-    const GraphId from = *queueFront(queue);
-    dequeue(queue);
+  graphQueueClear(queue);
+  graphQueuePush(queue, source);
+  while (!graphQueueEmpty(queue)) {
+    const GraphId from = graphQueuePop(queue);
 
     for (ResidualEdgePtr edge = residual[from]; edge; edge = edge->next) {
       const GraphId to = edge->to;
@@ -84,7 +83,7 @@ static GraphBool bfs(const ResidualEdgePtr *residual, const QueuePtr queue,
       pred[to] = edge;
       if (to == sink) return 1;
 
-      enqueue(queue, to);
+      graphQueuePush(queue, to);
     }
   }
   return 0;
@@ -104,8 +103,8 @@ static FlowType pathFlow(const ResidualEdgePtr *pred, const GraphId sink) {
 FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
                             FlowType flow[], const GraphId source,
                             const GraphId sink) {
-  Queue queue;
-  queueInit(&queue, network->vertNum);
+  GraphQueue queue;
+  graphQueueInit(&queue, network->vertNum);
   ResidualEdgePtr *residual = createResidualNetwork(network, capacity);
   ResidualEdgePtr *pred = malloc(network->vertCap * sizeof(ResidualEdgePtr));
   memset(flow, 0, network->edgeCap * sizeof(FlowType));
@@ -135,6 +134,6 @@ FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
 
   free(residual);
   free(pred);
-  queueFreeData(&queue);
+  graphQueueRelease(&queue);
   return maxFlow;
 }

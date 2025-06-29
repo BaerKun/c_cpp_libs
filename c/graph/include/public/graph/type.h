@@ -11,6 +11,7 @@ typedef int64_t GraphInt;
 typedef uint64_t GraphSize;
 typedef int64_t WeightType;
 
+// graph
 typedef struct Graph_ Graph;
 typedef struct GraphEdge_ GraphEdge, *GraphEdgePtr;
 typedef struct Attribute_ Attribute;

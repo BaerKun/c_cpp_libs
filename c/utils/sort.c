@@ -1,33 +1,33 @@
 #include "sort.h"
 #include <stdlib.h>
 
-static inline void swap(SORT_DATA_TYPE *const x, SORT_DATA_TYPE *const y) {
-  SORT_DATA_TYPE const z = *x;
+static inline void swap(SortElemType_ *const x, SortElemType_ *const y) {
+  SortElemType_ const z = *x;
   *x = *y;
   *y = z;
 }
 
-void sort(SORT_DATA_TYPE *const array, const int size) {
+void sort(SortElemType_ *const array, const uint64_t size) {
   quickSort(array, size);
 }
 
-void insertSort(SORT_DATA_TYPE *const array, const int size) {
-  for (int i = 1, j; i < size; i++) {
-    SORT_DATA_TYPE const tmp = array[i];
+void insertSort(SortElemType_ *const array, const uint64_t size) {
+  for (uint64_t i = 1, j; i < size; i++) {
+    SortElemType_ const tmp = array[i];
     for (j = i; j && SORT_LESS_THAN(tmp, array[j - 1]); j--)
       array[j] = array[j - 1];
     array[j] = tmp;
   }
 }
 
-void shellSort(SORT_DATA_TYPE *const array, const int size) {
-  int j, delta;
+void shellSort(SortElemType_ *const array, const uint64_t size) {
+  uint64_t j, delta;
 
   for (delta = 1; delta < size; delta = delta << 1 | 1) {
   }
   for (delta >>= 1; delta; delta >>= 1) {
-    for (int i = delta; i < size; i++) {
-      SORT_DATA_TYPE const tmp = array[i];
+    for (uint64_t i = delta; i < size; i++) {
+      SortElemType_ const tmp = array[i];
       for (j = i; j >= delta && SORT_LESS_THAN(tmp, array[j - delta]);
            j -= delta)
         array[j] = array[j - delta];
@@ -36,11 +36,11 @@ void shellSort(SORT_DATA_TYPE *const array, const int size) {
   }
 }
 
-static void percolateDown(SORT_DATA_TYPE *const prev, int father,
-                          const int end) {
-  SORT_DATA_TYPE const theTop = prev[father];
+static void percolateDown(SortElemType_ *const prev, uint64_t father,
+                          const uint64_t end) {
+  SortElemType_ const theTop = prev[father];
 
-  for (int child; (child = father << 1) <= end; father = child) {
+  for (uint64_t child; (child = father << 1) <= end; father = child) {
     if (child != end && SORT_LESS_THAN(prev[child], prev[child + 1])) child++;
     if (SORT_LESS_THAN(theTop, prev[child]))
       prev[father] = prev[child];
@@ -50,23 +50,23 @@ static void percolateDown(SORT_DATA_TYPE *const prev, int father,
   prev[father] = theTop;
 }
 
-void heapSort(SORT_DATA_TYPE *const array, const int size) {
-  int *prev = array - 1;
+void heapSort(SortElemType_ *const array, const uint64_t size) {
+  SortElemType_ *prev = array - 1;
 
-  for (int i = size >> 1; i; --i) percolateDown(prev, i, size);
+  for (uint64_t i = size >> 1; i; --i) percolateDown(prev, i, size);
 
-  for (int i = size - 1; i > 0; --i) {
+  for (uint64_t i = size - 1; i > 0; --i) {
     swap(array + i, array);
     percolateDown(prev, 1, i);
   }
 }
 
-static void mergeLeftRight(SORT_DATA_TYPE *const array,
-                           SORT_DATA_TYPE *const tmpArray, const int left,
-                           const int center, const int right) {
-  int i = left;
-  int j = center + 1;
-  int out = left;
+static void mergeLeftRight(SortElemType_ *const array,
+                           SortElemType_ *const tmpArray, const uint64_t left,
+                           const uint64_t center, const uint64_t right) {
+  uint64_t i = left;
+  uint64_t j = center + 1;
+  uint64_t out = left;
 
   while (1) {
     if (SORT_LESS_THAN(array[i], array[j])) {
@@ -83,28 +83,28 @@ static void mergeLeftRight(SORT_DATA_TYPE *const array,
   for (i = left; i <= right; ++i) array[i] = tmpArray[i];
 }
 
-static void mergeSortStep(SORT_DATA_TYPE *const array,
-                          SORT_DATA_TYPE *const tmpArray, const int left,
-                          const int right) {
+static void mergeSortStep(SortElemType_ *const array,
+                          SortElemType_ *const tmpArray, const uint64_t left,
+                          const uint64_t right) {
   if (left < right) {
-    const int center = (left + right) >> 1;
+    const uint64_t center = (left + right) >> 1;
     mergeSortStep(array, tmpArray, left, center);
     mergeSortStep(array, tmpArray, center + 1, right);
     mergeLeftRight(array, tmpArray, left, center + 1, right);
   }
 }
 
-void mergeSort(SORT_DATA_TYPE *const array, const int size) {
-  SORT_DATA_TYPE *tmpArray = malloc(size * sizeof(SORT_DATA_TYPE));
+void mergeSort(SortElemType_ *const array, const uint64_t size) {
+  SortElemType_ *tmpArray = malloc(size * sizeof(SortElemType_));
   if (tmpArray) {
     mergeSortStep(array, tmpArray, 0, size - 1);
     free(tmpArray);
   }
 }
 
-static SORT_DATA_TYPE median(SORT_DATA_TYPE *const array, const int left,
-                             const int right) {
-  const int center = (left + right) >> 1;
+static SortElemType_ median(SortElemType_ *const array, const uint64_t left,
+                            const uint64_t right) {
+  const uint64_t center = (left + right) >> 1;
 
   if (SORT_LESS_THAN(array[center], array[left]))
     swap(array + left, array + center);
@@ -117,10 +117,10 @@ static SORT_DATA_TYPE median(SORT_DATA_TYPE *const array, const int left,
   return array[right - 1];
 }
 
-static int quickBody(SORT_DATA_TYPE *const array, const int left,
-                     const int right) {
-  SORT_DATA_TYPE const pivot = median(array, left, right);
-  int i = left, j = right - 1;
+static uint64_t quickBody(SortElemType_ *const array, const uint64_t left,
+                          const uint64_t right) {
+  SortElemType_ const pivot = median(array, left, right);
+  uint64_t i = left, j = right - 1;
 
   while (1) {
     while (SORT_LESS_THAN(array[++i], pivot));
@@ -132,24 +132,24 @@ static int quickBody(SORT_DATA_TYPE *const array, const int left,
   return i;
 }
 
-static void quickSortStep(SORT_DATA_TYPE *const array, const int left,
-                          const int right) {
+static void quickSortStep(SortElemType_ *const array, const uint64_t left,
+                          const uint64_t right) {
   if (left + 10 < right) {
-    const int i = quickBody(array, left, right);
+    const uint64_t i = quickBody(array, left, right);
     quickSortStep(array, left, i - 1);
     quickSortStep(array, i + 1, right);
   } else
     insertSort(array + left, right - left + 1);
 }
 
-void quickSort(SORT_DATA_TYPE *array, const int size) {
+void quickSort(SortElemType_ *array, const uint64_t size) {
   quickSortStep(array, 0, size - 1);
 }
 
-static void quickSelectStep(SORT_DATA_TYPE *const array, const int left,
-                            const int right, const int number) {
+static void quickSelectStep(SortElemType_ *const array, const uint64_t left,
+                            const uint64_t right, const uint64_t number) {
   if (left + 10 < right) {
-    const int i = quickBody(array, left, right);
+    const uint64_t i = quickBody(array, left, right);
     if (number < i)
       quickSelectStep(array, left, i - 1, number);
     else if (number > i)
@@ -158,23 +158,23 @@ static void quickSelectStep(SORT_DATA_TYPE *const array, const int left,
     insertSort(array + left, right - left + 1);
 }
 
-void quickSelect(SORT_DATA_TYPE *const array, const int size,
-                 const int number) {
+void quickSelect(SortElemType_ *const array, const uint64_t size,
+                 const uint64_t number) {
   quickSelectStep(array, 0, size - 1, number - 1);
 }
 
-static void bucketSortHelper(const SORT_DATA_TYPE iArray[],
-                             SORT_DATA_TYPE oArray[], int buckets[],
-                             const int size, const int shift) {
+static void bucketSortHelper(const SortElemType_ iArray[],
+                             SortElemType_ oArray[], uint64_t buckets[],
+                             const uint64_t size, const uint64_t shift) {
   for (int i = 0; i < 16; i++) buckets[i] = 0;
   for (int i = 0; i < size; i++) {
     ++buckets[(iArray[i] >> shift) & 15];
   }
 
-  SORT_DATA_TYPE tmp1 = buckets[0];
+  uint64_t tmp1 = buckets[0];
   buckets[0] = 0;
   for (int i = 1; i < 16; i++) {
-    SORT_DATA_TYPE const tmp2 = buckets[i];
+    uint64_t const tmp2 = buckets[i];
     buckets[i] = tmp1 + buckets[i - 1];
     tmp1 = tmp2;
   }
@@ -183,10 +183,10 @@ static void bucketSortHelper(const SORT_DATA_TYPE iArray[],
   }
 }
 
-void bucketSort(SORT_DATA_TYPE *const array, const int size) {
-  const int SHIFT_LIMIT = sizeof(SORT_DATA_TYPE) * 8;
-  int shift = 0, buckets[16];
-  SORT_DATA_TYPE *tmpArray = malloc(size * sizeof(SORT_DATA_TYPE));
+void bucketSort(SortElemType_ *const array, const uint64_t size) {
+  const uint64_t SHIFT_LIMIT = sizeof(SortElemType_) * 8;
+  uint64_t shift = 0, buckets[16];
+  SortElemType_ *tmpArray = malloc(size * sizeof(SortElemType_));
   if (tmpArray == NULL) return;
 
   do {

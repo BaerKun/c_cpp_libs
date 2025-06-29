@@ -1,28 +1,32 @@
 #ifndef SORT_H
 #define SORT_H
 
-#ifndef SORT_DATA_TYPE
-#define SORT_DATA_TYPE int
+#ifndef SORT_ELEM_TYPE
+#define SORT_ELEM_TYPE int
 #endif
 
 #ifndef SORT_LESS_THAN
 #define SORT_LESS_THAN(x, y) ((x) < (y))
 #endif
 
-void sort(SORT_DATA_TYPE *array, int size);
+#include <stdint.h>
 
-void insertSort(SORT_DATA_TYPE *array, int size);
+typedef SORT_ELEM_TYPE SortElemType_;
 
-void shellSort(SORT_DATA_TYPE *array, int size);
+void sort(SortElemType_ *array, uint64_t size);
 
-void heapSort(SORT_DATA_TYPE *array, int size);
+void insertSort(SortElemType_ *array, uint64_t size);
 
-void mergeSort(SORT_DATA_TYPE *array, int size);
+void shellSort(SortElemType_ *array, uint64_t size);
 
-void quickSort(SORT_DATA_TYPE *array, int size);
+void heapSort(SortElemType_ *array, uint64_t size);
 
-void quickSelect(SORT_DATA_TYPE *array, int size, int number);
+void mergeSort(SortElemType_ *array, uint64_t size);
 
-void bucketSort(SORT_DATA_TYPE *array, int size);
+void quickSort(SortElemType_ *array, uint64_t size);
+
+void quickSelect(SortElemType_ *array, uint64_t size, uint64_t number);
+
+void bucketSort(SortElemType_ *array, uint64_t size);
 
 #endif // SORT_H

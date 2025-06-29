@@ -5,7 +5,7 @@ typedef struct {
   int left, right;
 } LeftRight;
 
-#define QUEUE_DATA_TYPE LeftRight
+#define QUEUE_ELEM_TYPE LeftRight
 #include "queue.h"
 
 typedef struct {

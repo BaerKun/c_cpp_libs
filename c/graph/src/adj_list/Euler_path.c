@@ -1,4 +1,5 @@
 #include "graph/adj_list/Euler_path.h"
+#include <stdlib.h>
 #include <string.h>
 
 // 递归实现
@@ -23,16 +24,16 @@ static GraphEdgePtr getTargetEdge(GraphEdgePtr *const iter,
   return edge;
 }
 
-static int EulerRecursiveStep(Package *package, LinkNodePtr *const path,
+static int EulerRecursiveStep(Package *package, GraphLinkedPath **const pred,
                               const GraphId src) {
   while (1) {
     const GraphEdgePtr edge =
         getTargetEdge(package->iter + src, package->visited);
     if (edge == NULL) break;
 
-    nodeInsert(path, edge->id);
+    GraphLinkedPath *const path = graphPathInsert(pred, edge->id);
 
-    if (!EulerRecursiveStep(package, &(*path)->next, edge->to)) return 0;
+    if (!EulerRecursiveStep(package, &path->next, edge->to)) return 0;
 
     package->dfsDst = src;
   }
@@ -41,59 +42,52 @@ static int EulerRecursiveStep(Package *package, LinkNodePtr *const path,
 }
 
 static inline int EulerPath_recursive(GraphEdgePtr *iter, GraphBool *visited,
-                                      LinkNodePtr *const path, const GraphId src,
-                                      const GraphId dst) {
+                                      GraphLinkedPath **const path,
+                                      const GraphId src, const GraphId dst) {
   Package package = {iter, visited, dst};
   return EulerRecursiveStep(&package, path, src);
 }
 
 // 栈实现
 typedef struct {
-  LinkNodePtr *path;
+  GraphLinkedPath **pred;
   GraphId src;
 } Argument; // 入栈量，与递归相对
-#define STACK_DATA_TYPE Argument
-#include "stack.h"
 
-static int EulerPath_stack(GraphEdgePtr *iter, GraphBool *visited,
-                           LinkNodePtr *const path, const GraphId src,
-                           GraphId dst, const GraphSize edgeNum) {
-  Stack stack;
-  stackInit(&stack, (int)edgeNum);
-
-  int success = 0;
-  Argument arg = {path, src}; // 当前"函数"参数
+static GraphBool EulerPath_stack(GraphEdgePtr *iter, GraphBool *visited,
+                                 GraphLinkedPath **const head,
+                                 const GraphId src, GraphId dst,
+                                 const GraphSize edgeNum) {
+  Argument *const stack = malloc(edgeNum * sizeof(Argument));
+  Argument *ptr = stack; // 当前"函数"参数
+  GraphBool success = 0;
+  *ptr = (Argument){head, src};
 
   while (1) {
-    const GraphEdgePtr edge = getTargetEdge(iter + arg.src, visited);
+    const GraphEdgePtr edge = getTargetEdge(iter + ptr->src, visited);
     if (edge == NULL) {
-      if (arg.src != dst) break;
+      if (ptr->src != dst) break;
 
       // 结束
-      if (stackEmpty(&stack)) {
+      if (ptr-- == stack) {
         success = 1;
         break;
       }
 
-      // 返回
-      arg = *stackTop(&stack);
-      stackPop(&stack);
-
-      dst = arg.src;
+      dst = ptr->src;
       continue;
     }
-    nodeInsert(arg.path, edge->id);
+    GraphLinkedPath *const path = graphPathInsert(ptr->pred, edge->id);
 
     // 调用
-    stackPush(&stack, arg);
-    arg = (Argument){&(*arg.path)->next, edge->to};
+    *++ptr = (Argument){&path->next, edge->to};
   }
 
-  stackFreeData(&stack);
+  free(stack);
   return success;
 }
 
-void EulerPath(const Graph *const graph, LinkNodePtr *const path,
+void EulerPath(const Graph *const graph, GraphLinkedPath **const path,
                const GraphId src, const GraphId dst) {
   GraphEdgePtr *iter = malloc(graph->vertCap * sizeof(GraphEdgePtr));
   GraphBool *visited = calloc(graph->edgeCap, sizeof(GraphBool));
@@ -105,14 +99,14 @@ void EulerPath(const Graph *const graph, LinkNodePtr *const path,
     EulerPath_stack(iter, visited, path, src, dst, graph->edgeNum)
   ) {
     // clang-format on
-    nodeClear(path);
+    graphPathClear(path);
   }
 
   free(iter);
   free(visited);
 }
 
-void EulerCircuit(const Graph *const graph, LinkNodePtr *const path,
+void EulerCircuit(const Graph *const graph, GraphLinkedPath **const path,
                   const GraphId src) {
   EulerPath(graph, path, src, src);
 }
