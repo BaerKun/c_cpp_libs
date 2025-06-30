@@ -7,7 +7,7 @@ void graphQueueInit(GraphQueue *queue, const GraphSize capacity) {
   queue->data = malloc(capacity * sizeof(GraphId));
 }
 
-void graphQueuePush(GraphQueue *queue, GraphId item) {
+void graphQueuePush(GraphQueue *queue, const GraphId item) {
   queue->data[queue->front] = item;
   if (++queue->front == queue->capacity) queue->front = 0;
   ++queue->size;

@@ -30,7 +30,7 @@ static void findSccForward(Package *package, const GraphId from) {
   graphStackPush(package->stack, from);
 }
 
-static void findSccBackward(Package *package, GraphId from) {
+static void findSccBackward(Package *package, const GraphId from) {
   GraphEdgePtr edge = package->adjList[from];
   package->adjList[from] = NULL;
 
