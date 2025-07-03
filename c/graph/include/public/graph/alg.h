@@ -1,14 +1,49 @@
 #ifndef GRAPH_ALG_H
 #define GRAPH_ALG_H
 
-#include "adj_list/aoa.h"
-#include "adj_list/Euler_path.h"
-#include "adj_list/find_articulation.h"
-#include "adj_list/find_scc.h"
-#include "adj_list/max_flow.h"
-#include "adj_list/min_spanning_tree.h"
-#include "adj_list/topsort.h"
-#include "adj_list/unweighed_path.h"
-#include "adj_list/weight_path.h"
+#include "graph/type.h"
+
+void criticalPath(const Graph *aoa, const TimeType duration[],
+                  const GraphInt indegree[], GraphId successor[],
+                  TimeType earlyStart[], TimeType lateStart[]);
+
+void EulerCircuit(const Graph *graph, GraphLinkedPath **path, GraphId src);
+
+void EulerPath(const Graph *graph, GraphLinkedPath **path, GraphId src,
+               GraphId dst);
+
+/*
+ * 割点：若删除该点及其关联的边后，图会被分割成两个或多个不连通的子图
+ * 本函数只用在无向图，且连通
+ */
+void graphFindArticulation(const Graph *graph, GraphLinkedPath **articulations);
+
+// 强连接分支 Strongly Connected Component
+void graphFindScc(const Graph *graph, GraphId connectionId[]);
+
+FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
+                            FlowType flow[], GraphId source, GraphId sink);
+
+void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
+                         GraphId predecessor[], GraphId root);
+
+void KruskalMinSpanningTree(const GraphEdgeEndpoint *set,
+                            const WeightType weight[], GraphSize edgeNum,
+                            GraphSize vertNum, GraphId tree[]);
+
+void topoSort(const Graph *graph, const GraphInt indegree[], GraphId sort[]);
+
+void topoPath(const Graph *graph, const GraphInt indegree[],
+                  GraphId predecessor[]);
+
+void unweightedShortest(const Graph *graph, GraphId predecessor[],
+                         GraphId source, GraphId target);
+
+void DijkstraShortest(const Graph *graph, const WeightType weight[],
+                          GraphId predecessor[], GraphId source,
+                          GraphId target);
+
+void BellmanFordShortest(const Graph *graph, const WeightType weight[],
+                  GraphId predecessor[], GraphId source);
 
 #endif //GRAPH_ALG_H

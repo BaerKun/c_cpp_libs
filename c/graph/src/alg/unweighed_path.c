@@ -1,4 +1,4 @@
-#include "graph/adj_list/unweighed_path.h"
+#include "graph/graph.h"
 #include "private/queue.h"
 #include <string.h>
 

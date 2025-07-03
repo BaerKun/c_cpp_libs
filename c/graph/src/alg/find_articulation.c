@@ -1,4 +1,5 @@
-#include "graph/adj_list/find_articulation.h"
+#include "graph/graph.h"
+#include "graph/linked_path.h"
 #include <stdlib.h>
 
 typedef struct VertexAttribute_ VertexAttribute;

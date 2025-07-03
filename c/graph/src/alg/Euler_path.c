@@ -1,4 +1,5 @@
-#include "graph/adj_list/Euler_path.h"
+#include "graph/graph.h"
+#include "graph/linked_path.h"
 #include <stdlib.h>
 #include <string.h>
 

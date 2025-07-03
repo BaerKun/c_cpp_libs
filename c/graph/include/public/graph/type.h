@@ -11,32 +11,38 @@ typedef int64_t GraphInt;
 typedef uint64_t GraphSize;
 typedef int64_t WeightType;
 
-// graph
-typedef struct Graph_ Graph;
-typedef struct GraphEdge_ GraphEdge, *GraphEdgePtr;
-typedef struct Attribute_ Attribute;
+typedef WeightType TimeType; // aoa
+typedef WeightType FlowType; // flow
 
-struct Attribute_ {
-  GraphId hash[2];
-  Attribute *next;
-  void *vector;
-};
-
-struct GraphEdge_ {
+typedef struct GraphLinkedPath_ GraphLinkedPath;
+struct GraphLinkedPath_ {
+  GraphLinkedPath *next;
   GraphId id;
-  GraphId to;
-  GraphEdgePtr next;
 };
 
-struct Graph_ {
-  GraphSize vertCap, edgeCap;
-  GraphSize vertNum, edgeNum;
-  GraphEdgePtr *adjList;
-  Attribute *vertAttr, *edgeAttr;
-};
+// graph
+typedef struct Attribute_ Attribute;
+typedef struct GraphIdManager_ GraphIdManager;
+
+typedef struct {
+  GraphId id, to;
+} GraphEdge;
+
+typedef struct {
+  GraphId curr;
+  const GraphId *next;
+} GraphIter;
 
 typedef struct {
   GraphId from, to;
 } GraphEdgeEndpoint;
+
+typedef struct {
+  GraphSize vertCap, edgeCap;
+  GraphSize vertNum, edgeNum;
+  GraphEdgeEndpoint *endpts;
+  GraphIdManager *manager;
+  Attribute *vertAttr, *edgeAttr;
+} Graph;
 
 #endif // GRAPH_VERTEX_EDGE_H

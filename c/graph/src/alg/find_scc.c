@@ -1,5 +1,4 @@
-#include "graph/adj_list/find_scc.h"
-#include "private/edge.h"
+#include "graph/graph.h"
 #include "private/stack.h"
 #include <string.h>
 #include <stdlib.h>

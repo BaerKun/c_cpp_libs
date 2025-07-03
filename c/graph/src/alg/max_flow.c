@@ -1,4 +1,4 @@
-#include "graph/adj_list/max_flow.h"
+#include "graph/graph.h"
 #include "private/queue.h"
 #include <stdlib.h>
 #include <string.h>

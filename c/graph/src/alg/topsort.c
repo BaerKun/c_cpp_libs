@@ -1,4 +1,4 @@
-#include "graph/adj_list/topsort.h"
+#include "graph/graph.h"
 #include "private/indegree.h"
 #include <stdio.h>
 #include <stdlib.h>

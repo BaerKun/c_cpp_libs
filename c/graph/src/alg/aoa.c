@@ -1,4 +1,4 @@
-#include "graph/adj_list/aoa.h"
+#include "graph/graph.h"
 #include "private/indegree.h"
 #include <stdlib.h>
 #include <string.h>

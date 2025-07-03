@@ -3,12 +3,6 @@
 
 #include "graph/type.h"
 
-typedef struct GraphLinkedPath_ GraphLinkedPath;
-struct GraphLinkedPath_ {
-  GraphLinkedPath *next;
-  GraphId id;
-};
-
 GraphLinkedPath *graphPathInsert(GraphLinkedPath **predNextPtr, GraphId id);
 
 GraphLinkedPath *graphPathUnlink(GraphLinkedPath **predNextPtr);

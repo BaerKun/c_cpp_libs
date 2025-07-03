@@ -1,4 +1,4 @@
-#include "graph/adj_list/weight_path.h"
+#include "graph/graph.h"
 #include "private/queue.h"
 
 #define HEAP_ELEM_TYPE WeightType *
