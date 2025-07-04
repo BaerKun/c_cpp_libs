@@ -5,7 +5,7 @@
 
 // 递归实现
 typedef struct {
-  GraphEdgePtr *iter;
+  GraphIter *iters;
   GraphBool *visited;
   GraphId dfsDst; // 当前深度优先搜索的目标顶点
 } Package;        // 递归全局量
@@ -29,7 +29,7 @@ static int EulerRecursiveStep(Package *package, GraphLinkedPath **const pred,
                               const GraphId src) {
   while (1) {
     const GraphEdgePtr edge =
-        getTargetEdge(package->iter + src, package->visited);
+        getTargetEdge(package->iters + src, package->visited);
     if (edge == NULL) break;
 
     GraphLinkedPath *const path = graphPathInsert(pred, edge->id);

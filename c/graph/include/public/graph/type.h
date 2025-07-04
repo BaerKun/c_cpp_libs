@@ -20,18 +20,18 @@ struct GraphLinkedPath_ {
   GraphId id;
 };
 
-// graph
-typedef struct Attribute_ Attribute;
-typedef struct GraphIdManager_ GraphIdManager;
+typedef struct {
+  GraphId curr;
+  const GraphId *next;
+} GraphIter;
 
 typedef struct {
   GraphId id, to;
 } GraphEdge;
 
-typedef struct {
-  GraphId curr;
-  const GraphId *next;
-} GraphIter;
+// graph
+typedef struct Attribute_ Attribute;
+typedef struct GraphManager_ GraphManager;
 
 typedef struct {
   GraphId from, to;
@@ -41,7 +41,7 @@ typedef struct {
   GraphSize vertCap, edgeCap;
   GraphSize vertNum, edgeNum;
   GraphEdgeEndpoint *endpts;
-  GraphIdManager *manager;
+  GraphManager *manager;
   Attribute *vertAttr, *edgeAttr;
 } Graph;
 

@@ -3,7 +3,7 @@
 
 #include "private/queue.h"
 
-GraphInt *indegreeInit(const GraphInt indegree[], GraphQueue *queue,
-                       GraphSize vertCap);
+GraphInt *indegreeInit(const Graph *graph, const GraphInt indegree[],
+                       GraphQueue *queue);
 
 #endif // GRAPH_INIT_INDEGREE_H

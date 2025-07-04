@@ -3,34 +3,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void forward(const GraphEdgePtr adjList[], GraphInt indegree[],
+static void forward(const Graph *const aoa, GraphInt indegree[],
                     const TimeType duration[], TimeType earlyStart[],
                     GraphQueue *const queue) {
+  GraphIter iter;
   while (!graphQueueEmpty(queue)) {
-    const GraphId node = graphQueuePop(queue);
-
-    for (const GraphEdge *arrow = adjList[node]; arrow; arrow = arrow->next) {
-      const GraphId succ = arrow->to; // successor 后继
-      if (earlyStart[succ] < earlyStart[node] + duration[arrow->id])
-        earlyStart[succ] = earlyStart[node] + duration[arrow->id];
-      if (--indegree[succ] == 0) graphQueuePush(queue, succ);
+    const GraphId from = graphQueuePop(queue);
+    geIterInit(aoa, &iter, from);
+    while (!ghIterEnd(&iter)) {
+      const GraphEdge arrow = geIterCurr(aoa, &iter);
+      if (earlyStart[arrow.to] < earlyStart[from] + duration[arrow.id])
+        earlyStart[arrow.to] = earlyStart[from] + duration[arrow.id];
+      if (--indegree[arrow.to] == 0) graphQueuePush(queue, arrow.to);
     }
   }
 }
 
-static void backward(const GraphEdgePtr adjList[], const TimeType duration[],
+static void backward(const Graph *const aoa, const TimeType duration[],
                      const TimeType earlyStart[], TimeType lateStart[],
                      GraphId successor[], const GraphId *const begin,
                      const GraphId *const end) {
+  GraphIter iter;
   const GraphId *p = end;
   do {
-    const GraphId node = *--p;
-    for (const GraphEdge *arrow = adjList[node]; arrow; arrow = arrow->next) {
-      const GraphId succ = arrow->to;
-      if (lateStart[node] > lateStart[succ] - duration[arrow->id]) {
-        lateStart[node] = lateStart[succ] - duration[arrow->id];
-        if (lateStart[node] == earlyStart[node]) {
-          successor[node] = succ;
+    const GraphId from = *--p;
+    geIterInit(aoa, &iter, from);
+    while (!ghIterEnd(&iter)) {
+      const GraphEdge arrow = geIterCurr(aoa, &iter);
+      if (lateStart[from] > lateStart[arrow.to] - duration[arrow.id]) {
+        lateStart[from] = lateStart[arrow.to] - duration[arrow.id];
+        if (lateStart[from] == earlyStart[from]) {
+          successor[from] = arrow.to;
           break;
         }
       }
@@ -42,19 +45,20 @@ void criticalPath(const Graph *aoa, const TimeType duration[],
                   const GraphInt indegree[], GraphId successor[],
                   TimeType earlyStart[], TimeType lateStart[]) {
   GraphQueue queue;
-  GraphInt *copyIndeg = indegreeInit(indegree, &queue, aoa->vertCap);
-  memset(successor, 255, aoa->vertCap * sizeof(GraphId));
-  memset(earlyStart, 0, aoa->vertCap * sizeof(TimeType));
-  memset(lateStart, 0x7f, aoa->vertCap * sizeof(TimeType));
+  GraphSize vertRange;
+  graphGetIdRange(aoa, &vertRange, NULL);
+  GraphInt *copyIndeg = indegreeInit(aoa, indegree, &queue);
+  memset(successor, 255, vertRange * sizeof(GraphId));
+  memset(earlyStart, 0, vertRange * sizeof(TimeType));
+  memset(lateStart, 0x7f, vertRange * sizeof(TimeType));
 
-  forward(aoa->adjList, copyIndeg, duration, earlyStart, &queue);
+  forward(aoa, copyIndeg, duration, earlyStart, &queue);
 
-  const GraphId *last = queue.data + aoa->vertCap - 1;
+  const GraphId *last = queue.data + vertRange - 1;
   lateStart[*last] = earlyStart[*last];
 
-  backward(aoa->adjList, duration, earlyStart, lateStart, successor, queue.data,
-    last);
+  backward(aoa, duration, earlyStart, lateStart, successor, queue.data, last);
 
-  graphQueueRelease(&queue);
   free(copyIndeg);
+  graphQueueRelease(&queue);
 }

@@ -1,5 +1,6 @@
 #include "graph/type.h"
 #include "private/attribute.h"
+#include <stdlib.h>
 
 void graphAddEdgeAttribute(Graph *graph, const char name[16],
                            const GraphSize sizeOfElem) {
