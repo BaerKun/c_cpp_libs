@@ -3,7 +3,10 @@
 
 #include <stdint.h>
 
-#define UNREACHABLE ((WeightType)0x7f7f7f7f7f7f7f7f)
+#define GRAPH_TRUE 1
+#define GRAPH_FALSE 0
+#define INVALID_ID 0x7f7f7f7f7f7f7f7f
+#define UNREACHABLE 0x7f7f7f7f7f7f7f7f
 
 typedef int8_t GraphBool;
 typedef int64_t GraphId;
@@ -21,28 +24,9 @@ struct GraphLinkedPath_ {
 };
 
 typedef struct {
-  GraphId curr;
-  const GraphId *next;
-} GraphIter;
-
-typedef struct {
-  GraphId id, to;
-} GraphEdge;
-
-// graph
-typedef struct Attribute_ Attribute;
-typedef struct GraphManager_ GraphManager;
-
-typedef struct {
   GraphId from, to;
 } GraphEdgeEndpoint;
 
-typedef struct {
-  GraphSize vertCap, edgeCap;
-  GraphSize vertNum, edgeNum;
-  GraphEdgeEndpoint *endpts;
-  GraphManager *manager;
-  Attribute *vertAttr, *edgeAttr;
-} Graph;
+typedef struct Graph_ Graph;
 
 #endif // GRAPH_VERTEX_EDGE_H

@@ -1,6 +1,12 @@
 #include "graph/type.h"
-#include "private/attribute.h"
+#include "private/graph_detail.h"
 #include <stdlib.h>
+#include <string.h>
+
+static inline void strHash16(const char str[16], uint64_t hash[2]) {
+  hash[0] = hash[1] = 0;
+  strncpy((char *)hash, str, 16);
+}
 
 void graphAddEdgeAttribute(Graph *graph, const char name[16],
                            const GraphSize sizeOfElem) {
