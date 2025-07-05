@@ -6,20 +6,10 @@
 typedef struct {
   GraphSize range;
   GraphId freeHead;
-  GraphId *next;
-} IdManager;
-
-typedef struct {
-  GraphBool directed;
   GraphId *iterHead;
+  GraphId *next;
   GraphId *buff;
-  IdManager idMng;
-} GraphEdgeManager;
-
-typedef struct {
-  GraphId iterHead;
-  IdManager idMng;
-} GraphVertManager;
+} GraphManager;
 
 typedef struct Attribute_ Attribute;
 struct Attribute_ {
@@ -29,11 +19,12 @@ struct Attribute_ {
 };
 
 struct Graph_ {
+  GraphBool directed;
   GraphSize vertCap, edgeCap;
   GraphSize vertNum, edgeNum;
   GraphEdgeEndpoint *endpts;
-  GraphVertManager vertMng;
-  GraphEdgeManager edgeMng;
+  GraphManager vertMng;
+  GraphManager edgeMng;
   Attribute *vertAttr, *edgeAttr;
 };
 
