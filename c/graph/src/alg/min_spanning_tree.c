@@ -1,4 +1,5 @@
-#include "graph/graph.h"
+#include "private/graph_detail.h"
+#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,22 +11,22 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId root) {
   Heap heap;
   heapInit(&heap, graph->vertNum);
-  GraphBool *visited = calloc(graph->vertCap, sizeof(GraphBool));
-  WeightType *minWeight = malloc(graph->vertCap * sizeof(WeightType));
-  memset(minWeight, 0x7f, graph->vertCap * sizeof(WeightType));
+  GraphIter *iter = graphGetIter(graph);
+  GraphBool *visited = calloc(graph->vertMng.range, sizeof(GraphBool));
+  WeightType *minWeight = malloc(graph->vertMng.range * sizeof(WeightType));
+  memset(minWeight, UNREACHABLE, graph->vertMng.range * sizeof(WeightType));
 
-  predecessor[root] = -1;
+  GraphId id, to;
+  predecessor[root] = INVALID_ID;
   heapPush(&heap, minWeight + root);
   while (heap.size) {
     const GraphId from = (GraphId)(*heapTop(&heap) - minWeight);
     heapPop(&heap);
     visited[from] = 1;
 
-    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
-      const GraphId to = edge->to;
-
-      if (!visited[to] && minWeight[to] > weight[edge->id]) {
-        minWeight[to] = weight[edge->id];
+    while (graphIterNextEdge(iter, from, &id, &to)) {
+      if (!visited[to] && minWeight[to] > weight[id]) {
+        minWeight[to] = weight[id];
         predecessor[to] = from;
         heapPush(&heap, minWeight + to);
       }
@@ -34,6 +35,7 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
 
   free(visited);
   free(minWeight);
+  graphIterRelease(iter);
   heapFreeData(&heap);
 }
 

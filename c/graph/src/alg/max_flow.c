@@ -1,6 +1,6 @@
+#include "graph/iter.h"
 #include "private/graph_detail.h"
 #include "private/queue.h"
-#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,24 +42,25 @@ static void reverse(ResidualEdgePtr *const residual,
 // 残余网络
 static ResidualEdgePtr *createResidualNetwork(const Graph *network,
                                               const FlowType capacity[]) {
-  ResidualEdgePtr *residual =
-      malloc(network->vertCap * sizeof(ResidualEdgePtr) +
-             network->edgeCap * sizeof(ResidualEdge));
+  const GraphSize vertRange = network->vertMng.range;
+  const GraphSize edgeRange = network->edgeMng.range;
+
+  ResidualEdgePtr *residual = malloc(edgeRange * sizeof(ResidualEdge));
   ResidualEdgePtr edges = (ResidualEdgePtr)(residual + network->vertCap);
 
-  for (GraphId from = 0; from < network->vertCap; ++from) {
-    residual[from] = NULL;
-    for (GraphEdgePtr edge = network->adjList[from]; edge; edge = edge->next) {
-      const ResidualEdgePtr copy = edges++;
-      copy->id = edge->id;
-      copy->reverse = 0;
-      copy->from = from;
-      copy->to = edge->to;
-      copy->capacity = capacity[edge->id];
-      copy->current = 0;
-      insert(residual + from, copy);
-    }
-  }
+  // for (GraphId from = 0; from < network->vertCap; ++from) {
+  //   residual[from] = NULL;
+  //   for (GraphEdgePtr edge = network->adjList[from]; edge; edge = edge->next) {
+  //     const ResidualEdgePtr copy = edges++;
+  //     copy->id = edge->id;
+  //     copy->reverse = 0;
+  //     copy->from = from;
+  //     copy->to = edge->to;
+  //     copy->capacity = capacity[edge->id];
+  //     copy->current = 0;
+  //     insert(residual + from, copy);
+  //   }
+  // }
   return residual;
 }
 

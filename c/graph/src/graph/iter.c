@@ -1,5 +1,5 @@
-#include "private/graph_detail.h"
 #include "graph/iter.h"
+#include "private/graph_detail.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,7 +23,8 @@ void graphIterResetVert(const Graph *graph, GraphIter *iter) {
 void graphIterResetEdge(const Graph *graph, GraphIter *iter,
                         const GraphId from) {
   if (from == INVALID_ID) {
-    memcpy(iter->edgeCurr, graph->edgeMng.iterHead, graph->vertMng.range);
+    memcpy(iter->edgeCurr, graph->edgeMng.iterHead,
+           graph->vertMng.range * sizeof(GraphId));
   } else {
     iter->edgeCurr[from] = graph->edgeMng.iterHead[from];
   }
@@ -56,8 +57,8 @@ GraphBool graphIterNextVert(GraphIter *iter, GraphId *id) {
   return GRAPH_TRUE;
 }
 
-GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from,
-                            GraphId *id, GraphId *to) {
+GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from, GraphId *id,
+                            GraphId *to) {
   GraphId *curr = iter->edgeCurr + from;
   if (*curr == INVALID_ID) return GRAPH_FALSE;
   helper(iter->endpts, *curr, id, to);

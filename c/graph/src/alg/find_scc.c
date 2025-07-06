@@ -5,33 +5,33 @@
 #include <string.h>
 
 typedef struct {
-  const GraphManager *edge;
+  GraphIter *iter;
   GraphStack *stack;
   GraphBool *flag;
   GraphId *connectionId;
+  const GraphManager *edge;
   GraphId counter;
 } Package;
 
-static void findSccForward(Package *pkg, const GraphId from) {
-  // 拷贝，清空，以便之后加入反向边
-  pkg->edge->iterHead[from] = INVALID_ID;
+static void graphManagerInsert(const GraphManager *mng, const GraphId from,
+                               const GraphId id) {
+  mng->next[id] = mng->iterHead[from];
+  mng->iterHead[from] = id;
+}
 
+static void findSccForward(Package *pkg, const GraphId from) {
   GraphId id, to;
   pkg->flag[from] = 1;
   while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
     if (!pkg->flag[to]) findSccForward(pkg, to);
 
     // 边转向
-    next = edge->next;
-    edge->to = from;
-    edgeInsert(pkg->adjList + to, edge);
+    graphManagerInsert(pkg->edge, to, ~id);
   }
   graphStackPush(pkg->stack, from);
 }
 
 static void findSccBackward(Package *pkg, const GraphId from) {
-  pkg->edge->iterHead[from] = INVALID_ID;
-
   GraphId id, to;
   pkg->connectionId[from] = pkg->counter;
   pkg->flag[from] = 0;
@@ -39,26 +39,28 @@ static void findSccBackward(Package *pkg, const GraphId from) {
     if (pkg->flag[to]) findSccBackward(pkg, to);
 
     // 转回来
-    next = edge->next;
-    edge->to = from;
-    edgeInsert(pkg->adjList + to, edge);
+    graphManagerInsert(pkg->edge, to, ~id);
   }
 }
 
 void graphFindScc(const Graph *graph, GraphId connectionId[]) {
+  const GraphSize vertRange = graph->vertMng.range;
   GraphStack *stack = graphNewStack(graph->vertNum);
-  GraphBool *flag = calloc(graph->vertCap, sizeof(GraphBool));
-  Package pkg = {&graph->edgeMng, stack, flag, connectionId, 0};
-  memset(connectionId, 255, graph->vertCap * sizeof(GraphId));
+  GraphBool *flag = calloc(vertRange, sizeof(GraphBool));
+  Package pkg = {graphGetIter(graph), stack,           flag,
+                 connectionId,        &graph->edgeMng, 0};
+  memset(connectionId, INVALID_ID, vertRange * sizeof(GraphId));
 
   // 正序
   GraphId from;
+  memset(graph->edgeMng.iterHead, INVALID_ID, vertRange * sizeof(GraphId));
   while (graphIterNextVert(pkg.iter, &from)) {
     if (flag[from] == 0) findSccForward(&pkg, from);
   }
 
   // 逆序
   graphIterResetEdge(graph, pkg.iter, INVALID_ID);
+  memset(graph->edgeMng.iterHead, INVALID_ID, vertRange * sizeof(GraphId));
   while (!graphStackEmpty(stack)) {
     const GraphId vert = graphStackPop(stack);
     if (flag[vert] == 1) findSccBackward(&pkg, vert);

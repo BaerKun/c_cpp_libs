@@ -25,6 +25,7 @@ static void graphManagerInit(GraphManager *mng, const GraphBool directed,
 
 void graphInit(Graph *const graph, const GraphBool directed,
                const GraphSize vertCap, const GraphSize edgeCap) {
+  graph->directed = directed;
   graph->vertCap = vertCap;
   graph->edgeCap = edgeCap;
   graph->edgeNum = graph->vertNum = 0;
