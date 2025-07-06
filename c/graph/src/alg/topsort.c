@@ -19,7 +19,7 @@ static GraphInt *init(const Graph *graph, const GraphInt indegree[],
 void topoPath(const Graph *const graph, const GraphInt indegree[],
               GraphId predecessor[]) {
   GraphIter *iter = graphGetIter(graph);
-  GraphQueue *queue = graphQueueCreate(graph->vertNum);
+  GraphQueue *queue = graphNewQueue(graph->vertNum);
   GraphInt *copyIndeg = init(graph, indegree, iter, queue);
   memset(predecessor, INVALID_ID, graph->vertMng.range * sizeof(GraphId));
 
@@ -46,7 +46,7 @@ void topoPath(const Graph *const graph, const GraphInt indegree[],
 void topoSort(const Graph *const graph, const GraphInt indegree[],
               GraphId sort[]) {
   GraphIter *iter = graphGetIter(graph);
-  GraphQueue *queue = graphQueueCreate(graph->vertNum);
+  GraphQueue *queue = graphNewQueue(graph->vertNum);
   GraphInt *copyIndeg = init(graph, indegree, iter, queue);
 
   GraphInt counter = 0;

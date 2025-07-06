@@ -1,73 +1,71 @@
+#include "graph/iter.h"
 #include "private/graph_detail.h"
 #include "private/stack.h"
-#include "graph/iter.h"
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct {
-  GraphIter iter;
+  const GraphManager *edge;
+  GraphStack *stack;
   GraphBool *flag;
   GraphId *connectionId;
-  GraphStack *stack;
   GraphId counter;
 } Package;
 
-static void findSccForward(Package *package, const GraphId from) {
+static void findSccForward(Package *pkg, const GraphId from) {
   // 拷贝，清空，以便之后加入反向边
-  GraphEdgePtr edge = package->adjList[from];
-  package->adjList[from] = NULL;
+  pkg->edge->iterHead[from] = INVALID_ID;
 
-  package->flag[from] = 1;
-  for (GraphEdgePtr next; edge; edge = next) {
-    const GraphId to = edge->to;
-    if (!package->flag[to]) findSccForward(package, to);
+  GraphId id, to;
+  pkg->flag[from] = 1;
+  while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+    if (!pkg->flag[to]) findSccForward(pkg, to);
 
     // 边转向
     next = edge->next;
     edge->to = from;
-    edgeInsert(package->adjList + to, edge);
+    edgeInsert(pkg->adjList + to, edge);
   }
-  graphStackPush(package->stack, from);
+  graphStackPush(pkg->stack, from);
 }
 
-static void findSccBackward(Package *package, const GraphId from) {
-  GraphEdgePtr edge = package->adjList[from];
-  package->adjList[from] = NULL;
+static void findSccBackward(Package *pkg, const GraphId from) {
+  pkg->edge->iterHead[from] = INVALID_ID;
 
-  package->connectionId[from] = package->counter;
-  package->flag[from] = 0;
-  for (GraphEdgePtr next; edge; edge = next) {
-    const GraphId to = edge->to;
-    if (package->flag[to]) findSccBackward(package, to);
+  GraphId id, to;
+  pkg->connectionId[from] = pkg->counter;
+  pkg->flag[from] = 0;
+  while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+    if (pkg->flag[to]) findSccBackward(pkg, to);
 
     // 转回来
     next = edge->next;
     edge->to = from;
-    edgeInsert(package->adjList + to, edge);
+    edgeInsert(pkg->adjList + to, edge);
   }
 }
 
 void graphFindScc(const Graph *graph, GraphId connectionId[]) {
-  GraphStack stack;
-  graphStackInit(&stack, graph->vertNum);
+  GraphStack *stack = graphNewStack(graph->vertNum);
   GraphBool *flag = calloc(graph->vertCap, sizeof(GraphBool));
-  Package package = {graph->adjList, flag, connectionId, &stack, 0};
+  Package pkg = {&graph->edgeMng, stack, flag, connectionId, 0};
   memset(connectionId, 255, graph->vertCap * sizeof(GraphId));
 
   // 正序
-  for (GraphId vert = 0; vert != graph->vertCap; ++vert) {
-    if (flag[vert] == 0) {
-      findSccForward(&package, vert);
-    }
+  GraphId from;
+  while (graphIterNextVert(pkg.iter, &from)) {
+    if (flag[from] == 0) findSccForward(&pkg, from);
   }
 
   // 逆序
-  while (!graphStackEmpty(&stack)) {
-    const GraphId vert = graphStackPop(&stack);
-    if (flag[vert] == 1) findSccBackward(&package, vert);
-    ++package.counter;
+  graphIterResetEdge(graph, pkg.iter, INVALID_ID);
+  while (!graphStackEmpty(stack)) {
+    const GraphId vert = graphStackPop(stack);
+    if (flag[vert] == 1) findSccBackward(&pkg, vert);
+    ++pkg.counter;
   }
 
   free(flag);
-  graphStackRelease(&stack);
+  graphIterRelease(pkg.iter);
+  graphStackRelease(stack);
 }

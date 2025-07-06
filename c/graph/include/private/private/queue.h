@@ -9,7 +9,7 @@ typedef struct {
   GraphId data[0];
 } GraphQueue;
 
-GraphQueue *graphQueueCreate(GraphSize capacity);
+GraphQueue *graphNewQueue(GraphSize capacity);
 
 void graphQueueRelease(GraphQueue *queue);
 

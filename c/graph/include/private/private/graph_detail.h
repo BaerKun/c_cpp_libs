@@ -3,6 +3,13 @@
 
 #include "graph/type.h"
 
+struct GraphIter_ {
+  const GraphId *vertNext, *edgeNext;
+  const GraphEdgeEndpoint *endpts;
+  GraphId vertCurr;
+  GraphId edgeCurr[0];
+};
+
 typedef struct {
   GraphSize range;
   GraphId freeHead;

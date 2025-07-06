@@ -1,14 +1,7 @@
-#include "graph/iter.h"
 #include "private/graph_detail.h"
+#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
-
-struct GraphIter_ {
-  const GraphId *vertNext, *edgeNext;
-  const GraphEdgeEndpoint *endpts;
-  GraphId vertCurr;
-  GraphId edgeCurr[0];
-};
 
 GraphIter *graphGetIter(const Graph *graph) {
   const GraphSize sizeOfEdgeHeads = graph->vertMng.range * sizeof(GraphId);
@@ -63,7 +56,7 @@ GraphBool graphIterNextVert(GraphIter *iter, GraphId *id) {
   return GRAPH_TRUE;
 }
 
-GraphBool graphIterNextEdge(const GraphIter *iter, const GraphId from,
+GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from,
                             GraphId *id, GraphId *to) {
   GraphId *curr = iter->edgeCurr + from;
   if (*curr == INVALID_ID) return GRAPH_FALSE;

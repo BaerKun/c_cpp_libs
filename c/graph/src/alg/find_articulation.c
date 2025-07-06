@@ -65,17 +65,12 @@ void graphFindArticulation(const Graph *const graph,
     vertices[i].pred = NULL;
   }
 
-  Package pkg;
-  pkg.iter = graphGetIter(graph);
-  pkg.vertices = vertices;
-  pkg.arts = articulations;
-  pkg.topo = 0;
-
-  GraphId root, id, to;
-  graphIterCurr(pkg.iter, &root, &id, &to);
+  Package pkg = { graphGetIter(graph), vertices, articulations, 0};
+  GraphId root = pkg.iter->vertCurr;
   findArticulationStep(&pkg, vertices + root);
 
   // 若根节点有两个及以上的子树，则为割点
+  GraphId id, to;
   unsigned children = 0;
   graphIterResetEdge(graph, pkg.iter, root);
   while (graphIterNextEdge(pkg.iter, root, &id, &to)) {

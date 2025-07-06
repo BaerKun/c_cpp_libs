@@ -8,7 +8,7 @@ typedef struct {
   GraphId data[0];
 } GraphStack;
 
-GraphStack *graphStackInit(GraphSize capacity);
+GraphStack *graphNewStack(GraphSize capacity);
 
 void graphStackRelease(GraphStack *stack);
 

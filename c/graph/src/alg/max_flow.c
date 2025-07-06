@@ -32,7 +32,7 @@ static void insert(ResidualEdgePtr *const prevNext,
 static void reverse(ResidualEdgePtr *const residual,
                     const ResidualEdgePtr edge) {
   const GraphId from = edge->from;
-  edge->reverse = !edge->reverse;
+  edge->reverse = (GraphBool)!edge->reverse;
   edge->from = edge->to;
   edge->to = from;
   unlink(edge);
@@ -104,8 +104,7 @@ static FlowType pathFlow(const ResidualEdgePtr *pred, const GraphId sink) {
 FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
                             FlowType flow[], const GraphId source,
                             const GraphId sink) {
-  GraphQueue queue;
-  graphQueueInit(&queue, network->vertNum);
+  GraphQueue *queue = graphNewQueue(network->vertNum);
   ResidualEdgePtr *residual = createResidualNetwork(network, capacity);
   ResidualEdgePtr *pred = malloc(network->vertCap * sizeof(ResidualEdgePtr));
   memset(flow, 0, network->edgeCap * sizeof(FlowType));
@@ -113,7 +112,7 @@ FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
   FlowType maxFlow = 0;
   while (1) {
     memset(pred, 0, network->vertCap * sizeof(ResidualEdgePtr));
-    if (!bfs(residual, &queue, pred, source, sink)) break;
+    if (!bfs(residual, queue, pred, source, sink)) break;
 
     const FlowType stepFlow = pathFlow(pred, sink);
     for (ResidualEdgePtr edge = pred[sink], prev; edge != NULL; edge = prev) {
@@ -135,6 +134,6 @@ FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
 
   free(residual);
   free(pred);
-  graphQueueRelease(&queue);
+  graphQueueRelease(queue);
   return maxFlow;
 }

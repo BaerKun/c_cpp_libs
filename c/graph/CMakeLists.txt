@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCES "src/graph/*.c")
+file(GLOB_RECURSE SOURCES "src/*.c")
 add_library(graph STATIC ${SOURCES})
 target_include_directories(graph PUBLIC include/public)
 target_include_directories(graph PRIVATE include/private)

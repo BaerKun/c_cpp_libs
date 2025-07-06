@@ -1,7 +1,7 @@
 #include "private/queue.h"
 #include <stdlib.h>
 
-GraphQueue *graphQueueCreate(const GraphSize capacity) {
+GraphQueue *graphNewQueue(const GraphSize capacity) {
   GraphQueue *queue = malloc(sizeof(GraphQueue) + capacity * sizeof(GraphId));
   queue->capacity = capacity;
   queue->size = queue->front = queue->rear = 0;

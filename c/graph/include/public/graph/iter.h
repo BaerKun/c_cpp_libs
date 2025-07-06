@@ -14,7 +14,7 @@ void graphIterResetEdge(const Graph *graph, GraphIter *iter, GraphId from);
 void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *id,
                    GraphId *to);
 GraphBool graphIterNextVert(GraphIter *iter, GraphId *id);
-GraphBool graphIterNextEdge(const GraphIter *iter, GraphId from, GraphId *id,
+GraphBool graphIterNextEdge(GraphIter *iter, GraphId from, GraphId *id,
                             GraphId *to);
 
 #endif // GRAPH_ITER_H

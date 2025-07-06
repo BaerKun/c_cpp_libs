@@ -47,7 +47,7 @@ static void init(Package *pkg, const Graph *aoa, const GraphInt indegree[]) {
   const GraphSize vertRange = aoa->vertMng.range;
 
   pkg->iter = graphGetIter(aoa);
-  pkg->queue = graphQueueCreate(vertRange);
+  pkg->queue = graphNewQueue(vertRange);
   indegreeInit(pkg->iter, pkg->indegree, pkg->queue);
   graphIterResetEdge(aoa, pkg->iter, INVALID_ID);
 
