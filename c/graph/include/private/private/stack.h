@@ -5,12 +5,12 @@
 
 typedef struct {
   GraphSize size;
-  GraphId *data;
+  GraphId data[0];
 } GraphStack;
 
-void graphStackInit(GraphStack *stack, GraphSize capacity);
+GraphStack *graphStackInit(GraphSize capacity);
 
-void graphStackRelease(const GraphStack *stack);
+void graphStackRelease(GraphStack *stack);
 
 static inline void graphStackPush(GraphStack *const stack, const GraphId item) {
   stack->data[stack->size++] = item;

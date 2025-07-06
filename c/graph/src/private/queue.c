@@ -1,10 +1,11 @@
 #include "private/queue.h"
 #include <stdlib.h>
 
-void graphQueueInit(GraphQueue *queue, const GraphSize capacity) {
+GraphQueue *graphQueueCreate(const GraphSize capacity) {
+  GraphQueue *queue = malloc(sizeof(GraphQueue) + capacity * sizeof(GraphId));
   queue->capacity = capacity;
   queue->size = queue->front = queue->rear = 0;
-  queue->data = malloc(capacity * sizeof(GraphId));
+  return queue;
 }
 
 void graphQueuePush(GraphQueue *queue, const GraphId item) {
@@ -20,6 +21,6 @@ GraphId graphQueuePop(GraphQueue *queue) {
   return item;
 }
 
-void graphQueueRelease(const GraphQueue *queue) {
-  free(queue->data);
+void graphQueueRelease(GraphQueue *queue) {
+  free(queue);
 }

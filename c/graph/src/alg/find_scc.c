@@ -1,10 +1,11 @@
-#include "graph/graph.h"
+#include "private/graph_detail.h"
 #include "private/stack.h"
+#include "graph/iter.h"
 #include <string.h>
 #include <stdlib.h>
 
 typedef struct {
-  GraphEdgePtr *adjList;
+  GraphIter iter;
   GraphBool *flag;
   GraphId *connectionId;
   GraphStack *stack;

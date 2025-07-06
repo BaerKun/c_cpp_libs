@@ -1,87 +1,69 @@
-#include "graph/graph.h"
+#include "graph/iter.h"
 #include "graph/linked_path.h"
+#include "private/graph_detail.h"
 #include <stdlib.h>
-#include <string.h>
 
 // 递归实现
 typedef struct {
-  GraphIter *iters;
+  GraphIter *iter;
   GraphBool *visited;
   GraphId dfsDst; // 当前深度优先搜索的目标顶点
 } Package;        // 递归全局量
 
-static GraphEdgePtr getTargetEdge(GraphEdgePtr *const iter,
-                                  GraphBool *const visited) {
-  GraphEdgePtr edge = *iter;
-  while (edge && visited[edge->id]) edge = edge->next;
-
-  // 更新
-  if (edge == NULL) {
-    *iter = NULL;
-    return NULL;
+static GraphBool getTargetEdge(const Package *pkg, const GraphId from,
+                               GraphId *id, GraphId *to) {
+  while (graphIterNextEdge(pkg->iter, from, id, to)) {
+    if (!pkg->visited[*id]) {
+      pkg->visited[*id] = 1;
+      return GRAPH_TRUE;
+    }
   }
-  *iter = edge->next;
-  visited[edge->id] = 1;
-  return edge;
+  return GRAPH_FALSE;
 }
 
-static int EulerRecursiveStep(Package *package, GraphLinkedPath **const pred,
-                              const GraphId src) {
+static GraphBool EulerPath_recursive(Package *pkg, GraphLinkedPath **const pred,
+                                     const GraphId from) {
+  GraphId id, to;
   while (1) {
-    const GraphEdgePtr edge =
-        getTargetEdge(package->iters + src, package->visited);
-    if (edge == NULL) break;
-
-    GraphLinkedPath *const path = graphPathInsert(pred, edge->id);
-
-    if (!EulerRecursiveStep(package, &path->next, edge->to)) return 0;
-
-    package->dfsDst = src;
+    if (!getTargetEdge(pkg, from, &id, &to)) break;
+    GraphLinkedPath *const path = graphPathInsert(pred, id);
+    if (!EulerPath_recursive(pkg, &path->next, to)) return GRAPH_FALSE;
+    pkg->dfsDst = from;
   }
-
-  return src == package->dfsDst;
-}
-
-static inline int EulerPath_recursive(GraphEdgePtr *iter, GraphBool *visited,
-                                      GraphLinkedPath **const path,
-                                      const GraphId src, const GraphId dst) {
-  Package package = {iter, visited, dst};
-  return EulerRecursiveStep(&package, path, src);
+  return from == pkg->dfsDst;
 }
 
 // 栈实现
 typedef struct {
   GraphLinkedPath **pred;
-  GraphId src;
+  GraphId from;
 } Argument; // 入栈量，与递归相对
 
-static GraphBool EulerPath_stack(GraphEdgePtr *iter, GraphBool *visited,
-                                 GraphLinkedPath **const head,
-                                 const GraphId src, GraphId dst,
-                                 const GraphSize edgeNum) {
+static GraphBool EulerPath_stack(Package *pkg, GraphLinkedPath **const head,
+                                 const GraphId src, const GraphSize edgeNum) {
   Argument *const stack = malloc(edgeNum * sizeof(Argument));
   Argument *ptr = stack; // 当前"函数"参数
-  GraphBool success = 0;
+  GraphBool success = GRAPH_FALSE;
   *ptr = (Argument){head, src};
 
+  GraphId id, to;
   while (1) {
-    const GraphEdgePtr edge = getTargetEdge(iter + ptr->src, visited);
-    if (edge == NULL) {
-      if (ptr->src != dst) break;
+    if (!getTargetEdge(pkg, ptr->from, &id, &to)) {
+      if (ptr->from != pkg->dfsDst) break;
 
       // 结束
       if (ptr-- == stack) {
-        success = 1;
+        success = GRAPH_TRUE;
         break;
       }
 
-      dst = ptr->src;
+      pkg->dfsDst = ptr->from;
       continue;
     }
-    GraphLinkedPath *const path = graphPathInsert(ptr->pred, edge->id);
+    GraphLinkedPath *const path = graphPathInsert(ptr->pred, id);
 
     // 调用
-    *++ptr = (Argument){&path->next, edge->to};
+    *++ptr = (Argument){&path->next, to};
   }
 
   free(stack);
@@ -90,21 +72,22 @@ static GraphBool EulerPath_stack(GraphEdgePtr *iter, GraphBool *visited,
 
 void EulerPath(const Graph *const graph, GraphLinkedPath **const path,
                const GraphId src, const GraphId dst) {
-  GraphEdgePtr *iter = malloc(graph->vertCap * sizeof(GraphEdgePtr));
-  GraphBool *visited = calloc(graph->edgeCap, sizeof(GraphBool));
-  memcpy(iter, graph->adjList, graph->vertCap * sizeof(GraphEdgePtr));
+  Package pkg;
+  pkg.iter = graphGetIter(graph);
+  pkg.visited = calloc(graph->vertCap, sizeof(GraphBool));
+  pkg.dfsDst = dst;
 
   // clang-format off
   if (!
-    // EulerPath_recursive(iter, visited, path, src, dst)
-    EulerPath_stack(iter, visited, path, src, dst, graph->edgeNum)
+    // EulerPath_recursive(&pkg, path, src)
+    EulerPath_stack(&pkg, path, src, graph->edgeNum)
   ) {
     // clang-format on
     graphPathClear(path);
   }
 
-  free(iter);
-  free(visited);
+  free(pkg.visited);
+  graphIterRelease(pkg.iter);
 }
 
 void EulerCircuit(const Graph *const graph, GraphLinkedPath **const path,

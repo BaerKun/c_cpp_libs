@@ -1,39 +1,41 @@
-#include "graph/graph.h"
-#include "private/indegree.h"
+#include "graph/iter.h"
+#include "private/graph_detail.h"
+#include "private/utils.h"
 #include <stdlib.h>
 #include <string.h>
 
-static void forward(const Graph *const aoa, GraphInt indegree[],
-                    const TimeType duration[], TimeType earlyStart[],
-                    GraphQueue *const queue) {
-  GraphIter iter;
-  while (!graphQueueEmpty(queue)) {
-    const GraphId from = graphQueuePop(queue);
-    geIterInit(aoa, &iter, from);
-    while (!ghIterEnd(&iter)) {
-      const GraphEdge arrow = geIterCurr(aoa, &iter);
-      if (earlyStart[arrow.to] < earlyStart[from] + duration[arrow.id])
-        earlyStart[arrow.to] = earlyStart[from] + duration[arrow.id];
-      if (--indegree[arrow.to] == 0) graphQueuePush(queue, arrow.to);
+typedef struct {
+  GraphIter *iter;
+  GraphQueue *queue;
+  GraphInt *indegree;
+  const TimeType *duration;
+  TimeType *earlyStart, *lateStart;
+  GraphId *successor;
+} Package;
+
+static void forward(const Package *const pkg) {
+  GraphId id, to;
+  while (!graphQueueEmpty(pkg->queue)) {
+    const GraphId from = graphQueuePop(pkg->queue);
+    while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+      if (pkg->earlyStart[to] < pkg->earlyStart[from] + pkg->duration[id])
+        pkg->earlyStart[to] = pkg->earlyStart[from] + pkg->duration[id];
+      if (--pkg->indegree[to] == 0) graphQueuePush(pkg->queue, to);
     }
   }
 }
 
-static void backward(const Graph *const aoa, const TimeType duration[],
-                     const TimeType earlyStart[], TimeType lateStart[],
-                     GraphId successor[], const GraphId *const begin,
+static void backward(const Package *pkg, const GraphId *const begin,
                      const GraphId *const end) {
-  GraphIter iter;
   const GraphId *p = end;
+  GraphId id, to;
   do {
     const GraphId from = *--p;
-    geIterInit(aoa, &iter, from);
-    while (!ghIterEnd(&iter)) {
-      const GraphEdge arrow = geIterCurr(aoa, &iter);
-      if (lateStart[from] > lateStart[arrow.to] - duration[arrow.id]) {
-        lateStart[from] = lateStart[arrow.to] - duration[arrow.id];
-        if (lateStart[from] == earlyStart[from]) {
-          successor[from] = arrow.to;
+    while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+      if (pkg->lateStart[from] > pkg->lateStart[to] - pkg->duration[id]) {
+        pkg->lateStart[from] = pkg->lateStart[to] - pkg->duration[id];
+        if (pkg->lateStart[from] == pkg->earlyStart[from]) {
+          pkg->successor[from] = to;
           break;
         }
       }
@@ -41,24 +43,40 @@ static void backward(const Graph *const aoa, const TimeType duration[],
   } while (p != begin);
 }
 
-void criticalPath(const Graph *aoa, const TimeType duration[],
-                  const GraphInt indegree[], GraphId successor[],
+static void init(Package *pkg, const Graph *aoa, const GraphInt indegree[]) {
+  const GraphSize vertRange = aoa->vertMng.range;
+
+  pkg->iter = graphGetIter(aoa);
+  pkg->queue = graphQueueCreate(vertRange);
+  indegreeInit(pkg->iter, pkg->indegree, pkg->queue);
+  graphIterResetEdge(aoa, pkg->iter, INVALID_ID);
+
+  pkg->indegree = malloc(vertRange * sizeof(GraphInt));
+  memcpy(pkg->indegree, indegree, vertRange * sizeof(GraphInt));
+  memset(pkg->earlyStart, 0, vertRange * sizeof(TimeType));
+  memset(pkg->lateStart, UNREACHABLE, vertRange * sizeof(TimeType));
+  memset(pkg->successor, INVALID_ID, vertRange * sizeof(GraphId));
+}
+
+void criticalPath(const Graph *aoa, const GraphInt indegree[],
+                  const TimeType duration[], GraphId successor[],
                   TimeType earlyStart[], TimeType lateStart[]) {
-  GraphQueue queue;
-  GraphSize vertRange;
-  graphGetIdRange(aoa, &vertRange, NULL);
-  GraphInt *copyIndeg = indegreeInit(aoa, indegree, &queue);
-  memset(successor, 255, vertRange * sizeof(GraphId));
-  memset(earlyStart, 0, vertRange * sizeof(TimeType));
-  memset(lateStart, 0x7f, vertRange * sizeof(TimeType));
+  Package pkg;
+  pkg.duration = duration;
+  pkg.earlyStart = earlyStart;
+  pkg.lateStart = lateStart;
+  pkg.successor = successor;
+  init(&pkg, aoa, indegree);
 
-  forward(aoa, copyIndeg, duration, earlyStart, &queue);
+  forward(&pkg);
+  graphIterResetEdge(aoa, pkg.iter, INVALID_ID);
 
-  const GraphId *last = queue.data + vertRange - 1;
+  const GraphId *last = pkg.queue->data + aoa->vertNum - 1;
   lateStart[*last] = earlyStart[*last];
 
-  backward(aoa, duration, earlyStart, lateStart, successor, queue.data, last);
+  backward(&pkg, pkg.queue->data, last);
 
-  free(copyIndeg);
-  graphQueueRelease(&queue);
+  free(pkg.indegree);
+  graphIterRelease(pkg.iter);
+  graphQueueRelease(pkg.queue);
 }

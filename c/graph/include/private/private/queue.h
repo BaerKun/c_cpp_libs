@@ -6,12 +6,12 @@
 typedef struct {
   GraphSize capacity, size;
   GraphSize front, rear;
-  GraphId *data;
+  GraphId data[0];
 } GraphQueue;
 
-void graphQueueInit(GraphQueue *queue, GraphSize capacity);
+GraphQueue *graphQueueCreate(GraphSize capacity);
 
-void graphQueueRelease(const GraphQueue *queue);
+void graphQueueRelease(GraphQueue *queue);
 
 void graphQueuePush(GraphQueue *queue, GraphId item);
 

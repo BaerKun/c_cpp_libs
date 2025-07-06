@@ -56,15 +56,14 @@ void graphDestroy(const Graph *const graph) {
 }
 
 void graphGetIndegree(const Graph *const graph, GraphInt indegree[]) {
-  memset(indegree, 0, graph->vertCap * sizeof(GraphInt));
+  memset(indegree, 0, graph->vertMng.range * sizeof(GraphInt));
 
-  GraphIter iter;
-  graphIterInit(graph, &iter);
-  GraphId from, to, edge;
-  while (graphIterNextVert(&iter, &from)) {
-    while (graphIterNextEdge(&iter, from, &edge, &to)) {
+  GraphIter *iter = graphGetIter(graph);
+  GraphId from, id, to;
+  while (graphIterNextVert(iter, &from)) {
+    while (graphIterNextEdge(iter, from, &id, &to)) {
       ++indegree[to];
     }
   }
-  graphIterRelease(&iter);
+  graphIterRelease(iter);
 }

@@ -3,8 +3,8 @@
 
 #include "graph/type.h"
 
-void criticalPath(const Graph *aoa, const TimeType duration[],
-                  const GraphInt indegree[], GraphId successor[],
+void criticalPath(const Graph *aoa, const GraphInt indegree[],
+                  const TimeType duration[], GraphId successor[],
                   TimeType earlyStart[], TimeType lateStart[]);
 
 void EulerCircuit(const Graph *graph, GraphLinkedPath **path, GraphId src);
@@ -34,16 +34,15 @@ void KruskalMinSpanningTree(const GraphEdgeEndpoint *set,
 void topoSort(const Graph *graph, const GraphInt indegree[], GraphId sort[]);
 
 void topoPath(const Graph *graph, const GraphInt indegree[],
-                  GraphId predecessor[]);
+              GraphId predecessor[]);
 
 void unweightedShortest(const Graph *graph, GraphId predecessor[],
-                         GraphId source, GraphId target);
+                        GraphId source, GraphId target);
 
 void DijkstraShortest(const Graph *graph, const WeightType weight[],
-                          GraphId predecessor[], GraphId source,
-                          GraphId target);
+                      GraphId predecessor[], GraphId source, GraphId target);
 
 void BellmanFordShortest(const Graph *graph, const WeightType weight[],
-                  GraphId predecessor[], GraphId source);
+                         GraphId predecessor[], GraphId source);
 
-#endif //GRAPH_ALG_H
+#endif // GRAPH_ALG_H

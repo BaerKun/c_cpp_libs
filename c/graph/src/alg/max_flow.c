@@ -1,5 +1,6 @@
-#include "graph/graph.h"
+#include "private/graph_detail.h"
 #include "private/queue.h"
+#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
 

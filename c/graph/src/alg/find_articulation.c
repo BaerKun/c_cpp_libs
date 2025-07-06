@@ -1,4 +1,5 @@
-#include "graph/graph.h"
+#include "private/graph_detail.h"
+#include "graph/iter.h"
 #include "graph/linked_path.h"
 #include <stdlib.h>
 
@@ -12,30 +13,31 @@ struct VertexAttribute_ {
 };
 
 typedef struct {
+  GraphIter *iter;
   VertexAttribute *vertices;
-  GraphEdgePtr *adjList;
   GraphLinkedPath **arts;
   GraphId topo;
 } Package;
 
-static void findArticulationStep(Package *package, VertexAttribute *vertex) {
-  GraphBool isArt = vertex->pred != NULL ? 1 : 0; // 排除根节点，单独处理
+static void findArticulationStep(Package *pkg, VertexAttribute *vertex) {
+  // 排除根节点，单独处理
+  GraphBool isArt = vertex->pred != NULL ? GRAPH_TRUE : GRAPH_FALSE;
+  GraphId id, to;
 
   vertex->visited = 1;
-  vertex->lowest = vertex->preorder = package->topo++;
-  for (GraphEdgePtr edge = package->adjList[vertex->id]; edge;
-       edge = edge->next) {
-    VertexAttribute *target = package->vertices + edge->to;
+  vertex->lowest = vertex->preorder = pkg->topo++;
+  while (graphIterNextEdge(pkg->iter, vertex->id, &id, &to)) {
+    VertexAttribute *target = pkg->vertices + to;
 
     if (!target->visited) {
       target->pred = vertex;
-      findArticulationStep(package, target);
+      findArticulationStep(pkg, target);
 
       // 若target所在的圈不包含vertex,则vertex为割点
       // 使用isArt，只添加一次
       if (target->lowest >= vertex->preorder && !isArt) {
         isArt = 1;
-        graphPathInsert(package->arts, vertex->id);
+        graphPathInsert(pkg->arts, vertex->id);
       }
 
       // 递归更新lowest
@@ -55,23 +57,33 @@ static void findArticulationStep(Package *package, VertexAttribute *vertex) {
 
 void graphFindArticulation(const Graph *const graph,
                            GraphLinkedPath **articulations) {
-  VertexAttribute *vertices = malloc(graph->vertCap * sizeof(VertexAttribute));
-  for (GraphId i = 0; i < graph->vertCap; i++) {
+  const GraphSize vertRange = graph->vertMng.range;
+  VertexAttribute *vertices = malloc(vertRange * sizeof(VertexAttribute));
+  for (GraphId i = 0; i < vertRange; i++) {
     vertices[i].id = i;
     vertices[i].visited = 0;
     vertices[i].pred = NULL;
   }
 
-  Package package = {vertices, graph->adjList, articulations, 0};
-  findArticulationStep(&package, vertices);
+  Package pkg;
+  pkg.iter = graphGetIter(graph);
+  pkg.vertices = vertices;
+  pkg.arts = articulations;
+  pkg.topo = 0;
+
+  GraphId root, id, to;
+  graphIterCurr(pkg.iter, &root, &id, &to);
+  findArticulationStep(&pkg, vertices + root);
 
   // 若根节点有两个及以上的子树，则为割点
   unsigned children = 0;
-  for (GraphEdgePtr adj = graph->adjList[0]; adj; adj = adj->next) {
-    if (vertices[adj->to].pred == vertices && ++children == 2) {
+  graphIterResetEdge(graph, pkg.iter, root);
+  while (graphIterNextEdge(pkg.iter, root, &id, &to)) {
+    if (vertices[to].pred == vertices && ++children == 2) {
       graphPathInsert(articulations, 0);
       break;
     }
   }
   free(vertices);
+  graphIterRelease(pkg.iter);
 }

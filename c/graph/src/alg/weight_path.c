@@ -1,5 +1,6 @@
-#include "graph/graph.h"
+#include "private/graph_detail.h"
 #include "private/queue.h"
+#include "graph/iter.h"
 
 #define HEAP_ELEM_TYPE WeightType *
 #define HEAP_LESS_THAN(a, b) (*a < *b)
@@ -10,13 +11,16 @@
 void DijkstraShortest(const Graph *const graph, const WeightType weight[],
                       GraphId predecessor[], const GraphId source,
                       const GraphId target) {
+  const GraphSize vertRange = graph->vertMng.range;
+  GraphIter *iter = graphGetIter(graph);
   Heap heap;
   heapInit(&heap, graph->vertNum);
-  GraphBool *visited = calloc(graph->vertCap, sizeof(GraphBool));
-  WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
-  memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
-  memset(predecessor, 255, graph->vertCap * sizeof(GraphId));
+  GraphBool *visited = calloc(vertRange, sizeof(GraphBool));
+  WeightType *distance = malloc(vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE, vertRange * sizeof(WeightType));
+  memset(predecessor, INVALID_ID, vertRange * sizeof(GraphId));
 
+  GraphId id, to;
   distance[source] = 0;
   heapPush(&heap, distance + source);
   while (!heapEmpty(&heap)) {
@@ -24,14 +28,12 @@ void DijkstraShortest(const Graph *const graph, const WeightType weight[],
     heapPop(&heap);
     if (from == target) goto END;
 
-    visited[from] = 1;
-    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
-      const GraphId to = edge->to;
-
-      if (visited[to] || distance[to] <= distance[from] + weight[edge->id])
+    visited[from] = GRAPH_TRUE;
+    while (graphIterNextEdge(iter, from, &id, &to)) {
+      if (visited[to] || distance[to] <= distance[from] + weight[id])
         continue;
 
-      distance[to] = distance[from] + weight[edge->id];
+      distance[to] = distance[from] + weight[id];
       predecessor[to] = from;
       heapPush(&heap, distance + to);
     }
@@ -39,43 +41,45 @@ void DijkstraShortest(const Graph *const graph, const WeightType weight[],
 END:
   free(visited);
   free(distance);
+  graphIterRelease(iter);
   heapFreeData(&heap);
 }
 
 // 无负值圈
 void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId source) {
-  GraphQueue queue;
-  graphQueueInit(&queue, graph->vertNum);
-  GraphBool *isInQueue = calloc(graph->vertCap, sizeof(GraphBool));
-  WeightType *distance = malloc(graph->vertCap * sizeof(WeightType));
-  memset(distance, 0x7f, graph->vertCap * sizeof(WeightType));
-  memset(predecessor, 255, graph->vertCap * sizeof(GraphId));
+  const GraphSize vertRange = graph->vertMng.range;
+  GraphIter *iter = graphGetIter(graph);
+  GraphQueue *queue = graphQueueCreate(graph->vertNum);
+  GraphBool *isInQueue = calloc(vertRange, sizeof(GraphBool));
+  WeightType *distance = malloc(vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE, vertRange * sizeof(WeightType));
+  memset(predecessor, INVALID_ID, vertRange * sizeof(GraphId));
 
+  GraphId id, to;
   distance[source] = 0;
-  isInQueue[source] = 1;
-  graphQueuePush(&queue, source);
+  isInQueue[source] = GRAPH_TRUE;
+  graphQueuePush(queue, source);
+  while (!graphQueueEmpty(queue)) {
+    const GraphId from = graphQueuePop(queue);
+    isInQueue[from] = GRAPH_TRUE;
 
-  while (!graphQueueEmpty(&queue)) {
-    const GraphId from = graphQueuePop(&queue);
-    isInQueue[from] = 0;
+    while (graphIterNextEdge(iter, from, &id, &to)) {
+      if (distance[to] <= distance[from] + weight[id]) continue;
 
-    for (GraphEdgePtr edge = graph->adjList[from]; edge; edge = edge->next) {
-      const GraphId to = edge->to;
-
-      if (distance[to] <= distance[from] + weight[edge->id]) continue;
-
-      distance[to] = distance[from] + weight[edge->id];
+      distance[to] = distance[from] + weight[id];
       predecessor[to] = from;
 
       if (!isInQueue[to]) {
-        graphQueuePush(&queue, to);
-        isInQueue[to] = 1;
+        graphQueuePush(queue, to);
+        graphIterResetEdge(graph, iter, to);
+        isInQueue[to] = GRAPH_TRUE;
       }
     }
   }
 
   free(isInQueue);
   free(distance);
-  graphQueueRelease(&queue);
+  graphIterRelease(iter);
+  graphQueueRelease(queue);
 }

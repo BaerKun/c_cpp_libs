@@ -1,11 +1,12 @@
 #include "private/stack.h"
 #include <stdlib.h>
 
-void graphStackInit(GraphStack *const stack, const GraphSize capacity) {
+GraphStack *graphStackInit(const GraphSize capacity) {
+  GraphStack *stack = malloc(sizeof(GraphStack) + capacity * sizeof(GraphId));
   stack->size = 0;
-  stack->data = malloc(capacity * sizeof(GraphId));
+  return stack;
 }
 
-void graphStackRelease(const GraphStack *const stack) {
-  free(stack->data);
+void graphStackRelease(GraphStack *const stack) {
+  free(stack);
 }
