@@ -1,47 +1,47 @@
-#include "private/graph_detail.h"
 #include "graph/iter.h"
-#include "graph/linked_path.h"
+#include "graph/linked_list.h"
+#include "private/graph_detail.h"
 #include <stdlib.h>
 
-typedef struct VertexAttribute_ VertexAttribute;
+typedef struct VertexAttribute_ Vertex;
 struct VertexAttribute_ {
-  GraphId id;
   GraphBool visited;
   GraphId preorder; // dfs中第一次访问节点的序数
   GraphId lowest;   // 该点所在的所有圈的所有顶点中最小的序数（一个点也视作圈）
-  VertexAttribute *pred;
+  Vertex *pred;
 };
 
 typedef struct {
   GraphIter *iter;
-  VertexAttribute *vertices;
-  GraphLinkedPath **arts;
+  Vertex *vertices;
+  GraphLinkedNode **arts;
   GraphId topo;
 } Package;
 
-static void findArticulationStep(Package *pkg, VertexAttribute *vertex) {
+static void findArticulationStep(Package *pkg, const GraphId from) {
   // 排除根节点，单独处理
+  Vertex *vertex = pkg->vertices + from;
   GraphBool isArt = vertex->pred != NULL ? GRAPH_TRUE : GRAPH_FALSE;
   GraphId id, to;
 
   vertex->visited = 1;
   vertex->lowest = vertex->preorder = pkg->topo++;
-  while (graphIterNextEdge(pkg->iter, vertex->id, &id, &to)) {
-    VertexAttribute *target = pkg->vertices + to;
+  while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+    Vertex *adjacent = pkg->vertices + to;
 
-    if (!target->visited) {
-      target->pred = vertex;
-      findArticulationStep(pkg, target);
+    if (!adjacent->visited) {
+      adjacent->pred = vertex;
+      findArticulationStep(pkg, to);
 
       // 若target所在的圈不包含vertex,则vertex为割点
       // 使用isArt，只添加一次
-      if (target->lowest >= vertex->preorder && !isArt) {
+      if (adjacent->lowest >= vertex->preorder && !isArt) {
         isArt = 1;
-        graphPathInsert(pkg->arts, vertex->id);
+        graphPathInsert(pkg->arts, from);
       }
 
       // 递归更新lowest
-      if (target->lowest < vertex->lowest) vertex->lowest = target->lowest;
+      if (adjacent->lowest < vertex->lowest) vertex->lowest = adjacent->lowest;
     }
     /*
      * 排除反向边；
@@ -49,30 +49,29 @@ static void findArticulationStep(Package *pkg, VertexAttribute *vertex) {
      * 因为单向DFS在无圈图中的遍历是拓扑排序的；
      * 更新lowest
      */
-    else if (target != vertex->pred && target->preorder < vertex->lowest) {
-      vertex->lowest = target->preorder;
+    else if (adjacent != vertex->pred && adjacent->preorder < vertex->lowest) {
+      vertex->lowest = adjacent->preorder;
     }
   }
 }
 
 void graphFindArticulation(const Graph *const graph,
-                           GraphLinkedPath **articulations) {
-  const GraphSize vertRange = graph->vertMng.range;
-  VertexAttribute *vertices = malloc(vertRange * sizeof(VertexAttribute));
+                           GraphLinkedNode **articulations) {
+  const GraphSize vertRange = VIEW(graph)->vertRange;
+  Vertex *vertices = malloc(vertRange * sizeof(Vertex));
   for (GraphId i = 0; i < vertRange; i++) {
-    vertices[i].id = i;
     vertices[i].visited = 0;
     vertices[i].pred = NULL;
   }
 
-  Package pkg = { graphGetIter(graph), vertices, articulations, 0};
-  GraphId root = pkg.iter->vertCurr;
-  findArticulationStep(&pkg, vertices + root);
+  Package pkg = {graphGetIter(graph), vertices, articulations, 0};
+  const GraphId root = pkg.iter->vertCurr;
+  findArticulationStep(&pkg, root);
 
   // 若根节点有两个及以上的子树，则为割点
   GraphId id, to;
   unsigned children = 0;
-  graphIterResetEdge(graph, pkg.iter, root);
+  graphIterResetEdge(pkg.iter, root);
   while (graphIterNextEdge(pkg.iter, root, &id, &to)) {
     if (vertices[to].pred == vertices && ++children == 2) {
       graphPathInsert(articulations, 0);

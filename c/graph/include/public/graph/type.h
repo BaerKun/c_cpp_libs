@@ -17,16 +17,17 @@ typedef int64_t WeightType;
 typedef WeightType TimeType; // aoa
 typedef WeightType FlowType; // flow
 
-typedef struct GraphLinkedPath_ GraphLinkedPath;
-struct GraphLinkedPath_ {
-  GraphLinkedPath *next;
+typedef struct Graph_ Graph;
+typedef struct GraphIter_ GraphIter;
+typedef struct GraphLinkedNode_ GraphLinkedNode;
+
+struct GraphLinkedNode_ {
+  GraphLinkedNode *next;
   GraphId id;
 };
 
 typedef struct {
   GraphId from, to;
-} GraphEdgeEndpoint;
-
-typedef struct Graph_ Graph;
+} GraphEndpoint;
 
 #endif // GRAPH_VERTEX_EDGE_H

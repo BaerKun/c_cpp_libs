@@ -5,9 +5,10 @@
 
 void unweightedShortest(const Graph *const graph, GraphId predecessor[],
                          const GraphId source, const GraphId target) {
-  GraphIter *iter = graphGetIter(graph);
-  GraphQueue *queue = graphQueueCreate(graph->vertNum);
-  memset(predecessor, INVALID_ID, sizeof(GraphId) * graph->vertMng.range);
+  const GraphView *view = VIEW(graph);
+  GraphIter *iter = graphIterFromView(view);
+  GraphQueue *queue = graphNewQueue(graph->vertNum);
+  memset(predecessor, INVALID_ID, sizeof(GraphId) * view->vertRange);
 
   GraphId id, to;
   graphQueuePush(queue, source);

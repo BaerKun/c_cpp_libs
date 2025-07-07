@@ -1,65 +1,60 @@
-#include "graph/graph.h"
 #include "graph/iter.h"
-#include "private/graph_detail.h"
+#include "private/attribute.h"
+#include "private/manager.h"
 #include <stdlib.h>
-#include <string.h>
 
 GraphSize graphGetGraphSize() { return sizeof(Graph); }
 
-static void graphManagerInit(GraphManager *mng, const GraphBool directed,
-                             const GraphSize capacity,
-                             const GraphSize headNum) {
-  mng->range = 0;
-  mng->freeHead = 0;
-  mng->iterHead = malloc(headNum * sizeof(GraphId));
-  memset(mng->iterHead, INVALID_ID, headNum * sizeof(GraphId));
-  if (directed) {
-    mng->next = mng->buff = malloc(capacity * sizeof(GraphId));
-  } else {
-    mng->buff = malloc(2 * capacity * sizeof(GraphId));
-    mng->next = mng->buff + capacity;
-  }
-  mng->next[capacity - 1] = INVALID_ID;
-  for (GraphId i = capacity - 1; i; --i) mng->next[i - 1] = i;
-}
-
 void graphInit(Graph *const graph, const GraphBool directed,
                const GraphSize vertCap, const GraphSize edgeCap) {
-  graph->directed = directed;
   graph->vertCap = vertCap;
   graph->edgeCap = edgeCap;
   graph->edgeNum = graph->vertNum = 0;
-  graph->endpts = malloc(edgeCap * sizeof(GraphEdgeEndpoint));
-  graphManagerInit(&graph->vertMng, 1, vertCap, 1);
-  graphManagerInit(&graph->edgeMng, directed, edgeCap, vertCap);
+  graphManagerInit(&graph->manager, directed, vertCap, edgeCap);
   graph->vertAttr = graph->edgeAttr = NULL;
 }
 
-static inline void destroyManager(const GraphManager *mng) {
-  free(mng->iterHead);
-  free(mng->buff);
-}
-
-static void destroyAttributeList(Attribute *attr) {
-  for (Attribute *next; attr; attr = next) {
-    next = attr->next;
-    free(attr->vector);
-    free(attr);
-  }
-}
-
 void graphDestroy(const Graph *const graph) {
-  free(graph->endpts);
-  destroyManager(&graph->vertMng);
-  destroyManager(&graph->edgeMng);
-  destroyAttributeList(graph->vertAttr);
-  destroyAttributeList(graph->edgeAttr);
+  graphManagerDestroy(&graph->manager);
+  graphAttrDestroyList(graph->vertAttr);
+  graphAttrDestroyList(graph->edgeAttr);
+}
+
+GraphId graphAddVert(Graph *const graph) {
+  if (graph->vertNum++ == graph->vertCap) {
+    // realloc
+  }
+  return graphManagerNewVert(&graph->manager);
+}
+
+GraphId graphAddEdge(Graph *const graph, const GraphId from, const GraphId to,
+                     const GraphBool directed) {
+  if (graph->edgeNum++ == graph->edgeCap) {
+    // realloc
+  }
+  return graphManagerNewEdge(&graph->manager, from, to, directed);
+}
+
+void graphDeleteVert(Graph *graph, const GraphId id) {
+  graphManagerDeleteVert(&graph->manager, id);
+  --graph->vertNum;
+}
+
+void graphDeleteEdge(Graph *graph, const GraphId id) {
+  graphManagerDeleteEdge(&graph->manager, id);
+  --graph->edgeNum;
+}
+
+void graphGetIdRange(const Graph *graph, GraphSize *vert, GraphSize *edge) {
+  if (vert) *vert = graph->manager.view.vertRange;
+  if (edge) *edge = graph->manager.view.edgeRange;
 }
 
 void graphGetIndegree(const Graph *const graph, GraphInt indegree[]) {
-  memset(indegree, 0, graph->vertMng.range * sizeof(GraphInt));
+  const GraphView *view = VIEW(graph);
+  memset(indegree, 0, view->vertRange * sizeof(GraphInt));
 
-  GraphIter *iter = graphGetIter(graph);
+  GraphIter *iter = graphIterFromView(view);
   GraphId from, id, to;
   while (graphIterNextVert(iter, &from)) {
     while (graphIterNextEdge(iter, from, &id, &to)) {

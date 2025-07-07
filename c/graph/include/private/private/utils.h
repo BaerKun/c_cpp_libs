@@ -1,15 +1,22 @@
-#ifndef GRAPH_INIT_INDEGREE_H
-#define GRAPH_INIT_INDEGREE_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "private/graph_detail.h"
-#include "graph/iter.h"
-#include "private/queue.h"
+#include "graph_detail.h"
+#include "queue.h"
 
-void indegreeInit(GraphIter *iter, const GraphInt indegree[],
-                  GraphQueue *queue);
+void graphIndegreeInit(GraphIter *iter, const GraphInt indegree[],
+                       GraphQueue *queue);
 
-void graphMangerInsert(GraphManager *mng, GraphId from, Graph id);
+GraphId *graphFind(GraphId *next, GraphId *head, GraphId id);
 
+static inline void graphUnlink(const GraphId *next, GraphId *predNext) {
+  *predNext = next[*predNext];
+}
 
+static inline void graphInsert(GraphId *next, GraphId *predNext,
+                               const GraphId id) {
+  next[id] = *predNext;
+  *predNext = id;
+}
 
-#endif // GRAPH_INIT_INDEGREE_H
+#endif // UTILS_H

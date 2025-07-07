@@ -1,5 +1,5 @@
 #include "graph/iter.h"
-#include "graph/linked_path.h"
+#include "graph/linked_list.h"
 #include "private/graph_detail.h"
 #include <stdlib.h>
 
@@ -21,12 +21,12 @@ static GraphBool getTargetEdge(const Package *pkg, const GraphId from,
   return GRAPH_FALSE;
 }
 
-static GraphBool EulerPath_recursive(Package *pkg, GraphLinkedPath **const pred,
+static GraphBool EulerPath_recursive(Package *pkg, GraphLinkedNode **const pred,
                                      const GraphId from) {
   GraphId id, to;
   while (1) {
     if (!getTargetEdge(pkg, from, &id, &to)) break;
-    GraphLinkedPath *const path = graphPathInsert(pred, id);
+    GraphLinkedNode *const path = graphPathInsert(pred, id);
     if (!EulerPath_recursive(pkg, &path->next, to)) return GRAPH_FALSE;
     pkg->dfsDst = from;
   }
@@ -35,11 +35,11 @@ static GraphBool EulerPath_recursive(Package *pkg, GraphLinkedPath **const pred,
 
 // 栈实现
 typedef struct {
-  GraphLinkedPath **pred;
+  GraphLinkedNode **pred;
   GraphId from;
 } Argument; // 入栈量，与递归相对
 
-static GraphBool EulerPath_stack(Package *pkg, GraphLinkedPath **const head,
+static GraphBool EulerPath_stack(Package *pkg, GraphLinkedNode **const head,
                                  const GraphId src, const GraphSize edgeNum) {
   Argument *const stack = malloc(edgeNum * sizeof(Argument));
   Argument *ptr = stack; // 当前"函数"参数
@@ -60,7 +60,7 @@ static GraphBool EulerPath_stack(Package *pkg, GraphLinkedPath **const head,
       pkg->dfsDst = ptr->from;
       continue;
     }
-    GraphLinkedPath *const path = graphPathInsert(ptr->pred, id);
+    GraphLinkedNode *const path = graphPathInsert(ptr->pred, id);
 
     // 调用
     *++ptr = (Argument){&path->next, to};
@@ -70,11 +70,12 @@ static GraphBool EulerPath_stack(Package *pkg, GraphLinkedPath **const head,
   return success;
 }
 
-void EulerPath(const Graph *const graph, GraphLinkedPath **const path,
+void EulerPath(const Graph *const graph, GraphLinkedNode **const path,
                const GraphId src, const GraphId dst) {
+  const GraphView *view = VIEW(graph);
   Package pkg;
-  pkg.iter = graphGetIter(graph);
-  pkg.visited = calloc(graph->vertCap, sizeof(GraphBool));
+  pkg.iter = graphIterFromView(view);
+  pkg.visited = calloc(view->vertRange, sizeof(GraphBool));
   pkg.dfsDst = dst;
 
   // clang-format off
@@ -90,7 +91,7 @@ void EulerPath(const Graph *const graph, GraphLinkedPath **const path,
   graphIterRelease(pkg.iter);
 }
 
-void EulerCircuit(const Graph *const graph, GraphLinkedPath **const path,
+void EulerCircuit(const Graph *const graph, GraphLinkedNode **const path,
                   const GraphId src) {
   EulerPath(graph, path, src, src);
 }

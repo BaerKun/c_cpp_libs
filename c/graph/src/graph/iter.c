@@ -4,33 +4,25 @@
 #include <string.h>
 
 GraphIter *graphGetIter(const Graph *graph) {
-  const GraphSize sizeOfEdgeHeads = graph->vertMng.range * sizeof(GraphId);
-  GraphIter *iter = malloc(sizeof(GraphIter) + sizeOfEdgeHeads);
-  iter->vertNext = graph->vertMng.next;
-  iter->edgeNext = graph->edgeMng.next;
-  iter->endpts = graph->endpts;
-  iter->vertCurr = *graph->vertMng.iterHead;
-  memcpy(iter->edgeCurr, graph->edgeMng.iterHead, sizeOfEdgeHeads);
-  return iter;
+  return graphIterFromView(VIEW(graph));
 }
 
 void graphIterRelease(GraphIter *iter) { free(iter); }
 
-void graphIterResetVert(const Graph *graph, GraphIter *iter) {
-  iter->vertCurr = *graph->vertMng.iterHead;
+void graphIterResetVert(GraphIter *iter) {
+  iter->vertCurr = iter->view->vertHead;
 }
 
-void graphIterResetEdge(const Graph *graph, GraphIter *iter,
-                        const GraphId from) {
+void graphIterResetEdge(GraphIter *iter, const GraphId from) {
   if (from == INVALID_ID) {
-    memcpy(iter->edgeCurr, graph->edgeMng.iterHead,
-           graph->vertMng.range * sizeof(GraphId));
+    memcpy(iter->edgeCurr, iter->view->edgeHead,
+           iter->view->vertRange * sizeof(GraphId));
   } else {
-    iter->edgeCurr[from] = graph->edgeMng.iterHead[from];
+    iter->edgeCurr[from] = iter->view->edgeHead[from];
   }
 }
 
-static void helper(const GraphEdgeEndpoint *endpts, const GraphId directedId,
+static void helper(const GraphEndpoint *endpts, const GraphId directedId,
                    GraphId *id, GraphId *to) {
   if (directedId >= 0) {
     *id = directedId;
@@ -47,13 +39,13 @@ void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *id,
   if (*from == INVALID_ID) return;
   *id = iter->edgeCurr[*from];
   if (*id == INVALID_ID) return;
-  helper(iter->endpts, *id, id, to);
+  helper(iter->view->endpts, *id, id, to);
 }
 
 GraphBool graphIterNextVert(GraphIter *iter, GraphId *id) {
   if (iter->vertCurr == INVALID_ID) return GRAPH_FALSE;
   *id = iter->vertCurr;
-  iter->vertCurr = iter->vertNext[iter->vertCurr];
+  iter->vertCurr = iter->view->vertNext[iter->vertCurr];
   return GRAPH_TRUE;
 }
 
@@ -61,7 +53,7 @@ GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from, GraphId *id,
                             GraphId *to) {
   GraphId *curr = iter->edgeCurr + from;
   if (*curr == INVALID_ID) return GRAPH_FALSE;
-  helper(iter->endpts, *curr, id, to);
-  *curr = iter->edgeNext[*curr];
+  helper(iter->view->endpts, *curr, id, to);
+  *curr = iter->view->edgeNext[*curr];
   return GRAPH_TRUE;
 }

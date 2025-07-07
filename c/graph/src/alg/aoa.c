@@ -1,5 +1,5 @@
 #include "graph/iter.h"
-#include "private/graph_detail.h"
+#include "private/queue.h"
 #include "private/utils.h"
 #include <stdlib.h>
 #include <string.h>
@@ -43,14 +43,12 @@ static void backward(const Package *pkg, const GraphId *const begin,
   } while (p != begin);
 }
 
-static void init(Package *pkg, const Graph *aoa, const GraphInt indegree[]) {
-  const GraphSize vertRange = aoa->vertMng.range;
+static void init(Package *pkg, const GraphView *view, const GraphInt indegree[]) {
+  const GraphSize vertRange = view->vertRange;
 
-  pkg->iter = graphGetIter(aoa);
+  pkg->iter = graphIterFromView(view);
   pkg->queue = graphNewQueue(vertRange);
-  indegreeInit(pkg->iter, pkg->indegree, pkg->queue);
-  graphIterResetEdge(aoa, pkg->iter, INVALID_ID);
-
+  graphIndegreeInit(pkg->iter, pkg->indegree, pkg->queue);
   pkg->indegree = malloc(vertRange * sizeof(GraphInt));
   memcpy(pkg->indegree, indegree, vertRange * sizeof(GraphInt));
   memset(pkg->earlyStart, 0, vertRange * sizeof(TimeType));
@@ -66,10 +64,10 @@ void criticalPath(const Graph *aoa, const GraphInt indegree[],
   pkg.earlyStart = earlyStart;
   pkg.lateStart = lateStart;
   pkg.successor = successor;
-  init(&pkg, aoa, indegree);
+  init(&pkg, VIEW(aoa), indegree);
 
   forward(&pkg);
-  graphIterResetEdge(aoa, pkg.iter, INVALID_ID);
+  graphIterResetEdge(pkg.iter, INVALID_ID);
 
   const GraphId *last = pkg.queue->data + aoa->vertNum - 1;
   lateStart[*last] = earlyStart[*last];

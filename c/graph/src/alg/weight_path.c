@@ -11,14 +11,14 @@
 void DijkstraShortest(const Graph *const graph, const WeightType weight[],
                       GraphId predecessor[], const GraphId source,
                       const GraphId target) {
-  const GraphSize vertRange = graph->vertMng.range;
+  const GraphView *view = VIEW(graph);
   GraphIter *iter = graphGetIter(graph);
   Heap heap;
   heapInit(&heap, graph->vertNum);
-  GraphBool *visited = calloc(vertRange, sizeof(GraphBool));
-  WeightType *distance = malloc(vertRange * sizeof(WeightType));
-  memset(distance, UNREACHABLE, vertRange * sizeof(WeightType));
-  memset(predecessor, INVALID_ID, vertRange * sizeof(GraphId));
+  GraphBool *visited = calloc(view->vertRange, sizeof(GraphBool));
+  WeightType *distance = malloc(view->vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE, view->vertRange * sizeof(WeightType));
+  memset(predecessor, INVALID_ID, view->vertRange * sizeof(GraphId));
 
   GraphId id, to;
   distance[source] = 0;
@@ -48,13 +48,13 @@ END:
 // 无负值圈
 void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId source) {
-  const GraphSize vertRange = graph->vertMng.range;
+  const GraphView *view = VIEW(graph);
   GraphIter *iter = graphGetIter(graph);
-  GraphQueue *queue = graphQueueCreate(graph->vertNum);
-  GraphBool *isInQueue = calloc(vertRange, sizeof(GraphBool));
-  WeightType *distance = malloc(vertRange * sizeof(WeightType));
-  memset(distance, UNREACHABLE, vertRange * sizeof(WeightType));
-  memset(predecessor, INVALID_ID, vertRange * sizeof(GraphId));
+  GraphQueue *queue = graphNewQueue(graph->vertNum);
+  GraphBool *isInQueue = calloc(view->vertRange, sizeof(GraphBool));
+  WeightType *distance = malloc(view->vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE, view->vertRange * sizeof(WeightType));
+  memset(predecessor, INVALID_ID, view->vertRange * sizeof(GraphId));
 
   GraphId id, to;
   distance[source] = 0;
@@ -72,7 +72,7 @@ void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
 
       if (!isInQueue[to]) {
         graphQueuePush(queue, to);
-        graphIterResetEdge(graph, iter, to);
+        graphIterResetEdge(iter, to);
         isInQueue[to] = GRAPH_TRUE;
       }
     }

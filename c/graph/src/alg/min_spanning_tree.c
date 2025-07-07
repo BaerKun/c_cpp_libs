@@ -9,12 +9,13 @@
 
 void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId root) {
+  const GraphView *view = VIEW(graph);
   Heap heap;
   heapInit(&heap, graph->vertNum);
   GraphIter *iter = graphGetIter(graph);
-  GraphBool *visited = calloc(graph->vertMng.range, sizeof(GraphBool));
-  WeightType *minWeight = malloc(graph->vertMng.range * sizeof(WeightType));
-  memset(minWeight, UNREACHABLE, graph->vertMng.range * sizeof(WeightType));
+  GraphBool *visited = calloc(view->vertRange, sizeof(GraphBool));
+  WeightType *minWeight = malloc(view->vertRange * sizeof(WeightType));
+  memset(minWeight, UNREACHABLE, view->vertRange * sizeof(WeightType));
 
   GraphId id, to;
   predecessor[root] = INVALID_ID;
@@ -41,7 +42,7 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
 
 #include "disjoint_set.h"
 
-void KruskalMinSpanningTree(const GraphEdgeEndpoint *set,
+void KruskalMinSpanningTree(const GraphEndpoint *set,
                             const WeightType weight[], const GraphSize edgeNum,
                             const GraphSize vertNum, GraphId *tree) {
   Heap heap;
@@ -60,7 +61,7 @@ void KruskalMinSpanningTree(const GraphEdgeEndpoint *set,
     heapPop(&heap);
 
     const GraphId id = w - weight;
-    const GraphEdgeEndpoint *edge = set + id;
+    const GraphEndpoint *edge = set + id;
     const int root1 = disjointSetFind(disjointSet, edge->from);
     const int root2 = disjointSetFind(disjointSet, edge->to);
 

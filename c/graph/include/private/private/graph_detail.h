@@ -3,18 +3,23 @@
 
 #include "graph/type.h"
 
+typedef struct {
+  GraphBool directed;
+  GraphSize vertRange, edgeRange;
+  GraphId vertHead, *edgeHead;
+  GraphId *vertNext, *edgeNext;
+  GraphEndpoint *endpts;
+} GraphView; // 最小图信息
+
 struct GraphIter_ {
-  const GraphId *vertNext, *edgeNext;
-  const GraphEdgeEndpoint *endpts;
+  const GraphView *view;
   GraphId vertCurr;
   GraphId edgeCurr[0];
 };
 
 typedef struct {
-  GraphSize range;
-  GraphId freeHead;
-  GraphId *iterHead;
-  GraphId *next;
+  GraphId vertFree, edgeFree;
+  GraphView view;
   GraphId *buff;
 } GraphManager;
 
@@ -26,13 +31,15 @@ struct Attribute_ {
 };
 
 struct Graph_ {
-  GraphBool directed;
   GraphSize vertCap, edgeCap;
   GraphSize vertNum, edgeNum;
-  GraphEdgeEndpoint *endpts;
-  GraphManager vertMng;
-  GraphManager edgeMng;
+  GraphManager manager;
   Attribute *vertAttr, *edgeAttr;
 };
+
+#define VIEW(graph) (&(graph)->manager.view)
+#define REVERSE(edge) (~(edge))
+
+GraphIter *graphIterFromView(const GraphView *view);
 
 #endif // GRAPH_DETAIL_H
