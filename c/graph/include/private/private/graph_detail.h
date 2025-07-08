@@ -3,6 +3,8 @@
 
 #include "graph/type.h"
 
+#define UNREACHABLE_BYTE 0x7f
+
 typedef struct {
   GraphBool directed;
   GraphSize vertRange, edgeRange;
@@ -20,7 +22,6 @@ struct GraphIter_ {
 typedef struct {
   GraphId vertFree, edgeFree;
   GraphView view;
-  GraphId *buff;
 } GraphManager;
 
 typedef struct Attribute_ Attribute;
@@ -38,7 +39,6 @@ struct Graph_ {
 };
 
 #define VIEW(graph) (&(graph)->manager.view)
-#define REVERSE(edge) (~(edge))
 
 GraphIter *graphIterFromView(const GraphView *view);
 

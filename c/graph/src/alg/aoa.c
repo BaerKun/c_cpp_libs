@@ -1,8 +1,11 @@
-#include "graph/iter.h"
+#include "private/graph_detail.h"
 #include "private/queue.h"
-#include "private/utils.h"
+#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
+
+void graphIndegreeInit(GraphIter *iter, const GraphInt indegree[],
+                       GraphQueue *queue);
 
 typedef struct {
   GraphIter *iter;
@@ -43,7 +46,8 @@ static void backward(const Package *pkg, const GraphId *const begin,
   } while (p != begin);
 }
 
-static void init(Package *pkg, const GraphView *view, const GraphInt indegree[]) {
+static void init(Package *pkg, const GraphView *view,
+                 const GraphInt indegree[]) {
   const GraphSize vertRange = view->vertRange;
 
   pkg->iter = graphIterFromView(view);

@@ -1,11 +1,12 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef GRAPH_VIEW_H
+#define GRAPH_VIEW_H
 
 #include "graph_detail.h"
-#include "queue.h"
 
-void graphIndegreeInit(GraphIter *iter, const GraphInt indegree[],
-                       GraphQueue *queue);
+#define REVERSE(edge) ((edge) ^ 1)
+
+GraphId *graphViewCopy(const GraphView *view, GraphView *copy, GraphBool vert,
+                       GraphBool edge);
 
 GraphId *graphFind(GraphId *next, GraphId *head, GraphId id);
 
@@ -19,4 +20,4 @@ static inline void graphInsert(GraphId *next, GraphId *predNext,
   *predNext = id;
 }
 
-#endif // UTILS_H
+#endif // GRAPH_VIEW_H

@@ -17,7 +17,7 @@ void DijkstraShortest(const Graph *const graph, const WeightType weight[],
   heapInit(&heap, graph->vertNum);
   GraphBool *visited = calloc(view->vertRange, sizeof(GraphBool));
   WeightType *distance = malloc(view->vertRange * sizeof(WeightType));
-  memset(distance, UNREACHABLE, view->vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE_BYTE, view->vertRange * sizeof(WeightType));
   memset(predecessor, INVALID_ID, view->vertRange * sizeof(GraphId));
 
   GraphId id, to;
@@ -53,7 +53,7 @@ void BellmanFordShortest(const Graph *const graph, const WeightType weight[],
   GraphQueue *queue = graphNewQueue(graph->vertNum);
   GraphBool *isInQueue = calloc(view->vertRange, sizeof(GraphBool));
   WeightType *distance = malloc(view->vertRange * sizeof(WeightType));
-  memset(distance, UNREACHABLE, view->vertRange * sizeof(WeightType));
+  memset(distance, UNREACHABLE_BYTE, view->vertRange * sizeof(WeightType));
   memset(predecessor, INVALID_ID, view->vertRange * sizeof(GraphId));
 
   GraphId id, to;

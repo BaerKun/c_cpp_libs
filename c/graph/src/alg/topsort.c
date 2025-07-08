@@ -1,8 +1,11 @@
-#include "graph/iter.h"
 #include "private/graph_detail.h"
-#include "private/utils.h"
+#include "private/queue.h"
+#include "graph/iter.h"
 #include <stdlib.h>
 #include <string.h>
+
+void graphIndegreeInit(GraphIter *iter, const GraphInt indegree[],
+                       GraphQueue *queue);
 
 void topoPath(const Graph *const graph, const GraphInt indegree[],
               GraphId predecessor[]) {

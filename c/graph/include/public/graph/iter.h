@@ -9,10 +9,10 @@ void graphIterResetVert(GraphIter *iter);
 // 重置迭代边，INVALID_ID -> 重置全部
 void graphIterResetEdge(GraphIter *iter, GraphId from);
 
-void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *id,
+void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *eid,
                    GraphId *to);
-GraphBool graphIterNextVert(GraphIter *iter, GraphId *id);
-GraphBool graphIterNextEdge(GraphIter *iter, GraphId from, GraphId *id,
+GraphBool graphIterNextVert(GraphIter *iter, GraphId *vid);
+GraphBool graphIterNextEdge(GraphIter *iter, GraphId from, GraphId *eid,
                             GraphId *to);
 
 #endif // GRAPH_ITER_H

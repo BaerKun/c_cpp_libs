@@ -1,7 +1,7 @@
 #include "graph/iter.h"
 #include "private/graph_detail.h"
 #include "private/queue.h"
-#include "private/utils.h"
+#include "private/view.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,26 +14,24 @@ static void reverse(const GraphView *const residual, const GraphId id,
 }
 
 // 残余网络
-static void residualNetworkInit(const GraphView *network, GraphView *residual,
-                                void **buff) {
+static void *residualNetworkInit(const GraphView *network,
+                                 GraphView *residual) {
   const GraphSize vertRange = network->vertRange;
   const GraphSize edgeRange = network->edgeRange;
+  residual->directed = network->directed;
   residual->vertHead = network->vertHead;
   residual->vertNext = network->vertNext;
 
-  if (network->directed) {
-    *buff = malloc((vertRange + edgeRange) * sizeof(GraphId));
-    residual->edgeNext = *buff + vertRange;
-    memcpy(residual->edgeNext, network->edgeNext, edgeRange * sizeof(GraphId));
-  } else {
-    *buff = malloc((vertRange + 2 * edgeRange) * sizeof(GraphId));
-    residual->edgeNext = *buff + 2 * vertRange;
-    memcpy(*buff + vertRange, network->edgeNext - edgeRange,
-           2 * edgeRange * sizeof(GraphId));
-  }
-  residual->edgeHead = *buff;
+  const GraphSize edgeNextSize =
+      sizeof(GraphId) * (network->directed ? edgeRange : 2 * edgeRange);
+  void *buff = malloc(vertRange * sizeof(GraphId) + edgeNextSize);
+  residual->edgeHead = buff;
   memcpy(residual->edgeHead, network->edgeHead,
          network->edgeRange * sizeof(GraphId));
+
+  residual->edgeNext = buff + vertRange;
+  memcpy(residual->edgeNext, network->edgeNext, edgeNextSize);
+  return buff;
 }
 
 /*
@@ -82,9 +80,8 @@ FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
                             FlowType flow[], const GraphId source,
                             const GraphId sink) {
   const GraphView *view = VIEW(network);
-  void *buff;
   GraphView residual;
-  residualNetworkInit(view, &residual, &buff);
+  void *buff = residualNetworkInit(view, &residual);
   GraphQueue *queue = graphNewQueue(network->vertNum);
   GraphIter *iter = graphIterFromView(&residual);
   GraphId *predEdge = malloc(view->edgeRange * sizeof(GraphId));

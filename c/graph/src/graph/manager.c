@@ -1,11 +1,12 @@
 #include "private/manager.h"
-#include "private/utils.h"
+#include "private/view.h"
 #include <stdlib.h>
 #include <string.h>
 
 void graphManagerInit(GraphManager *mgr, const GraphBool directed,
                       const GraphSize vertCap, const GraphSize edgeCap) {
   mgr->vertFree = mgr->edgeFree = 0;
+
   GraphView *const view = &mgr->view;
   view->directed = directed;
   view->vertRange = view->edgeRange = 0;
@@ -13,63 +14,73 @@ void graphManagerInit(GraphManager *mgr, const GraphBool directed,
   view->vertHead = INVALID_ID;
   view->edgeHead = malloc(vertCap * sizeof(GraphId));
   memset(view->edgeHead, INVALID_ID, vertCap * sizeof(GraphId));
-  if (directed) {
-    mgr->buff = view->edgeNext = malloc(edgeCap * sizeof(GraphId));
-  } else {
-    mgr->buff = malloc(2 * edgeCap * sizeof(GraphId));
-    view->edgeNext = mgr->buff + edgeCap;
-  }
+
   view->vertNext = malloc(vertCap * sizeof(GraphId));
-  view->vertNext[vertCap - 1] = view->edgeNext[edgeCap - 1] = INVALID_ID;
+  view->vertNext[vertCap - 1] = INVALID_ID;
   for (GraphId i = (GraphId)vertCap - 1; i; --i) view->vertNext[i - 1] = i;
-  for (GraphId i = (GraphId)edgeCap - 1; i; --i) view->edgeNext[i - 1] = i;
+
+  if (directed) {
+    view->edgeNext = malloc(edgeCap * sizeof(GraphId));
+    view->edgeNext[edgeCap - 1] = INVALID_ID;
+    for (GraphId i = (GraphId)edgeCap - 1; i; --i) view->edgeNext[i - 1] = i;
+  } else {
+    view->edgeNext = malloc(2 * edgeCap * sizeof(GraphId));
+    view->edgeNext[2 * (edgeCap - 1)] = INVALID_ID;
+    for (GraphId i = 2 * ((GraphId)edgeCap - 1); i; i -= 2)
+      view->edgeNext[i - 2] = i;
+  }
 }
 
 void graphManagerDestroy(const GraphManager *mgr) {
   free(mgr->view.edgeHead);
   free(mgr->view.vertNext);
-  free(mgr->buff);
+  free(mgr->view.edgeNext);
 }
 
 GraphId graphManagerNewVert(GraphManager *mgr) {
   GraphView *view = &mgr->view;
-  const GraphId id = mgr->vertFree;
+  const GraphId vid = mgr->vertFree;
   graphUnlink(view->vertNext, &mgr->vertFree);
-  graphInsert(view->vertNext, &view->vertHead, id);
-  if (id == view->vertRange) ++view->vertRange;
-  return id;
+  graphInsert(view->vertNext, &view->vertHead, vid);
+  if (vid == view->vertRange) ++view->vertRange;
+  return vid;
 }
 
 GraphId graphManagerNewEdge(GraphManager *mgr, const GraphId from,
                             const GraphId to, const GraphBool directed) {
   GraphView *view = &mgr->view;
-  const GraphId id = mgr->edgeFree;
-  view->endpts[id] = (GraphEndpoint){from, to};
+  const GraphId did = mgr->edgeFree;
   graphUnlink(view->edgeNext, &mgr->edgeFree);
-  graphInsert(view->edgeNext, view->edgeHead + from, id);
-  if (!directed) graphInsert(view->edgeNext, view->edgeHead + to, REVERSE(id));
-  if (id == view->edgeRange) ++view->edgeRange;
-  return id;
+  graphInsert(view->edgeNext, view->edgeHead + from, did);
+  if (!directed) graphInsert(view->edgeNext, view->edgeHead + to, REVERSE(did));
+
+  const GraphId eid = view->directed ? did : (did >> 1);
+  view->endpts[eid] = (GraphEndpoint){to, from};
+  if (eid == view->edgeRange) ++view->edgeRange;
+  return eid;
 }
 
-void graphManagerDeleteVert(GraphManager *mgr, const GraphId id) {
+void graphManagerDeleteVert(GraphManager *mgr, const GraphId vid) {
   GraphView *view = &mgr->view;
-  GraphId *predNext = graphFind(view->vertNext, &view->vertHead, id);
+
+  GraphId *predNext = graphFind(view->vertNext, &view->vertHead, vid);
   graphUnlink(view->vertNext, predNext);
-  graphInsert(view->vertNext, &mgr->vertFree, id);
-  if (id == view->vertRange - 1) view->vertRange = id;
+  graphInsert(view->vertNext, &mgr->vertFree, vid);
+  if (vid == view->vertRange - 1) view->vertRange = vid;
 }
 
-void graphManagerDeleteEdge(GraphManager *mgr, const GraphId id) {
+void graphManagerDeleteEdge(GraphManager *mgr, const GraphId eid) {
   GraphView *view = &mgr->view;
-  const GraphId from = view->endpts[id].from;
-  const GraphId to = view->endpts[id].to;
-  GraphId *predNext = graphFind(view->edgeNext, view->edgeHead + from, id);
+  const GraphId did = view->directed ? eid : (eid << 1);
+  const GraphId to = view->endpts[eid].to;
+  const GraphId from = view->endpts[eid].from;
+
+  GraphId *predNext = graphFind(view->edgeNext, view->edgeHead + from, did);
   graphUnlink(view->edgeNext, predNext);
-  graphInsert(view->edgeNext, &mgr->edgeFree, id);
-  if (id == view->edgeRange - 1) view->edgeRange = id;
+  graphInsert(view->edgeNext, &mgr->edgeFree, did);
   if (!view->directed) {
-    predNext = graphFind(view->edgeNext, view->edgeHead + to, REVERSE(id));
+    predNext = graphFind(view->edgeNext, view->edgeHead + to, REVERSE(did));
     if (predNext) graphUnlink(view->edgeNext, predNext);
   }
+  if (eid == view->edgeRange - 1) view->edgeRange = eid;
 }

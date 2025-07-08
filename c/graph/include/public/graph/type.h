@@ -5,7 +5,7 @@
 
 #define GRAPH_TRUE 1
 #define GRAPH_FALSE 0
-#define INVALID_ID 0x7f7f7f7f7f7f7f7f
+#define INVALID_ID -1
 #define UNREACHABLE 0x7f7f7f7f7f7f7f7f
 
 typedef int8_t GraphBool;
@@ -27,7 +27,7 @@ struct GraphLinkedNode_ {
 };
 
 typedef struct {
-  GraphId from, to;
+  GraphId to, from;
 } GraphEndpoint;
 
 #endif // GRAPH_VERTEX_EDGE_H

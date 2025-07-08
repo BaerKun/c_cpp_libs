@@ -22,38 +22,38 @@ void graphIterResetEdge(GraphIter *iter, const GraphId from) {
   }
 }
 
-static void helper(const GraphEndpoint *endpts, const GraphId directedId,
-                   GraphId *id, GraphId *to) {
-  if (directedId >= 0) {
-    *id = directedId;
-    *to = endpts[*id].to;
-  } else {
-    *id = ~directedId;
-    *to = endpts[*id].from;
+static inline void helper(const GraphView *view, const GraphId directedId,
+                   GraphId *eid, GraphId *to) {
+  if (view->directed) {
+    *eid = directedId;
+    *to = view->endpts[directedId].to;
+  }else {
+    *eid = directedId >> 1;
+    *to = ((GraphId *)view->endpts)[directedId];
   }
 }
 
-void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *id,
+void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *eid,
                    GraphId *to) {
   *from = iter->vertCurr;
   if (*from == INVALID_ID) return;
-  *id = iter->edgeCurr[*from];
-  if (*id == INVALID_ID) return;
-  helper(iter->view->endpts, *id, id, to);
+  *eid = iter->edgeCurr[*from];
+  if (*eid == INVALID_ID) return;
+  helper(iter->view, *eid, eid, to);
 }
 
-GraphBool graphIterNextVert(GraphIter *iter, GraphId *id) {
+GraphBool graphIterNextVert(GraphIter *iter, GraphId *vid) {
   if (iter->vertCurr == INVALID_ID) return GRAPH_FALSE;
-  *id = iter->vertCurr;
+  *vid = iter->vertCurr;
   iter->vertCurr = iter->view->vertNext[iter->vertCurr];
   return GRAPH_TRUE;
 }
 
-GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from, GraphId *id,
+GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from, GraphId *eid,
                             GraphId *to) {
   GraphId *curr = iter->edgeCurr + from;
   if (*curr == INVALID_ID) return GRAPH_FALSE;
-  helper(iter->view->endpts, *curr, id, to);
+  helper(iter->view, *curr, eid, to);
   *curr = iter->view->edgeNext[*curr];
   return GRAPH_TRUE;
 }

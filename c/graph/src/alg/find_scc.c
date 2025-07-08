@@ -1,6 +1,6 @@
 #include "graph/iter.h"
 #include "private/stack.h"
-#include "private/utils.h"
+#include "private/view.h"
 #include <stdlib.h>
 #include <string.h>
 

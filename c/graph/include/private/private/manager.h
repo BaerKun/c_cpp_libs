@@ -12,6 +12,6 @@ GraphId graphManagerNewEdge(GraphManager *mgr, GraphId from, GraphId to,
                             GraphBool directed);
 
 void graphManagerDeleteVert(GraphManager *mgr, GraphId id);
-void graphManagerDeleteEdge(GraphManager *mgr, GraphId id);
+void graphManagerDeleteEdge(GraphManager *mgr, GraphId eid);
 
 #endif // MANAGER_H
