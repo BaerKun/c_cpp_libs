@@ -12,33 +12,39 @@ typedef struct {
   GraphId counter;
 } Package;
 
-static inline void reverse(const GraphView *view, const GraphId to,
-                           const GraphId id) {
-  graphInsert(view->edgeNext, view->edgeHead + to, REVERSE(id));
-}
-
 static void findSccForward(Package *pkg, const GraphId from) {
-  GraphId id, to;
+  GraphId did, eid, to;
   pkg->flag[from] = 1;
-  while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+  while (graphIterNextDirect(pkg->iter, from, &did)) {
+    parse(pkg->iter->view, did, &eid, &to);
     if (!pkg->flag[to]) findSccForward(pkg, to);
-    reverse(pkg->iter->view, to, id); // 边转向
+    graphInsertEdge(pkg->iter->view, to, did); // 边转向
   }
   graphStackPush(pkg->stack, from);
 }
 
 static void findSccBackward(Package *pkg, const GraphId from) {
-  GraphId id, to;
+  GraphId did, eid, to;
   pkg->connectionId[from] = pkg->counter;
   pkg->flag[from] = 0;
-  while (graphIterNextEdge(pkg->iter, from, &id, &to)) {
+  while (graphIterNextDirect(pkg->iter, from, &did)) {
+    parse(pkg->iter->view, did, &eid, &to);
     if (pkg->flag[to]) findSccBackward(pkg, to);
-    reverse(pkg->iter->view, to, id); // 转回来
+    graphInsertEdge(pkg->iter->view, to, did); // 转回来
   }
 }
 
 static inline void resetHead(const GraphView *view) {
   memset(view->edgeHead, INVALID_ID, view->vertRange * sizeof(GraphId));
+}
+
+static inline void graphReverse(const GraphView *view) {
+  const GraphEndpoint *end = view->endpts + view->edgeRange;
+  for (GraphEndpoint *ptr = view->endpts; ptr != end; ++ptr) {
+    const GraphId tmp = ptr->to;
+    ptr->to = ptr->from;
+    ptr->from = tmp;
+  }
 }
 
 void graphFindScc(const Graph *graph, GraphId connectionId[]) {
@@ -58,6 +64,7 @@ void graphFindScc(const Graph *graph, GraphId connectionId[]) {
   // 逆序
   graphIterResetEdge(pkg.iter, INVALID_ID);
   resetHead(view);
+  graphReverse(view);
   while (!graphStackEmpty(stack)) {
     const GraphId vert = graphStackPop(stack);
     if (flag[vert] == 1) findSccBackward(&pkg, vert);

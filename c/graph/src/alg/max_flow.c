@@ -10,7 +10,7 @@ static void reverse(const GraphView *const residual, const GraphId id,
   GraphId *predNext =
       graphFind(residual->edgeNext, residual->edgeHead + from, id);
   graphUnlink(residual->edgeNext, predNext);
-  graphInsert(residual->edgeNext, residual->edgeHead + to, REVERSE(id));
+  graphInsertEdge(residual, to, id);
 }
 
 // 残余网络

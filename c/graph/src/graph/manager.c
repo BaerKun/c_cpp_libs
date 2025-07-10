@@ -35,6 +35,7 @@ void graphManagerDestroy(const GraphManager *mgr) {
   free(mgr->view.edgeHead);
   free(mgr->view.vertNext);
   free(mgr->view.edgeNext);
+  free(mgr->view.endpts);
 }
 
 GraphId graphManagerNewVert(GraphManager *mgr) {
@@ -51,8 +52,8 @@ GraphId graphManagerNewEdge(GraphManager *mgr, const GraphId from,
   GraphView *view = &mgr->view;
   const GraphId did = mgr->edgeFree;
   graphUnlink(view->edgeNext, &mgr->edgeFree);
-  graphInsert(view->edgeNext, view->edgeHead + from, did);
-  if (!directed) graphInsert(view->edgeNext, view->edgeHead + to, REVERSE(did));
+  graphInsertEdge(view, from, did);
+  if (!directed) graphInsertEdge(view, to, REVERSE(did));
 
   const GraphId eid = view->directed ? did : (did >> 1);
   view->endpts[eid] = (GraphEndpoint){to, from};
