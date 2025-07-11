@@ -8,16 +8,17 @@ void graphManagerInit(GraphManager *mgr, const GraphBool directed,
   mgr->vertFree = mgr->edgeFree = 0;
 
   GraphView *const view = &mgr->view;
-  view->directed = directed;
-  view->vertRange = view->edgeRange = 0;
-  view->endpts = malloc(edgeCap * sizeof(GraphEndpoint));
+  view->vertRange = 0;
   view->vertHead = INVALID_ID;
-  view->edgeHead = malloc(vertCap * sizeof(GraphId));
-  memset(view->edgeHead, INVALID_ID, vertCap * sizeof(GraphId));
-
   view->vertNext = malloc(vertCap * sizeof(GraphId));
   view->vertNext[vertCap - 1] = INVALID_ID;
   for (GraphId i = (GraphId)vertCap - 1; i; --i) view->vertNext[i - 1] = i;
+
+  view->directed = directed;
+  view->edgeRange = 0;
+  view->edgeHead = malloc(vertCap * sizeof(GraphId));
+  memset(view->edgeHead, INVALID_ID, vertCap * sizeof(GraphId));
+  view->endpts = malloc(edgeCap * sizeof(GraphEndpoint));
 
   if (directed) {
     view->edgeNext = malloc(edgeCap * sizeof(GraphId));
@@ -32,8 +33,8 @@ void graphManagerInit(GraphManager *mgr, const GraphBool directed,
 }
 
 void graphManagerDestroy(const GraphManager *mgr) {
-  free(mgr->view.edgeHead);
   free(mgr->view.vertNext);
+  free(mgr->view.edgeHead);
   free(mgr->view.edgeNext);
   free(mgr->view.endpts);
 }

@@ -37,7 +37,7 @@ static void findArticulationStep(Package *pkg, const GraphId from) {
       // 使用isArt，只添加一次
       if (adjacent->lowest >= vertex->preorder && !isArt) {
         isArt = 1;
-        graphPathInsert(pkg->arts, from);
+        graphLinkedInsert(pkg->arts, from);
       }
 
       // 递归更新lowest
@@ -57,14 +57,10 @@ static void findArticulationStep(Package *pkg, const GraphId from) {
 
 void graphFindArticulation(const Graph *const graph,
                            GraphLinkedNode **articulations) {
-  const GraphSize vertRange = VIEW(graph)->vertRange;
-  Vertex *vertices = malloc(vertRange * sizeof(Vertex));
-  for (GraphId i = 0; i < vertRange; i++) {
-    vertices[i].visited = 0;
-    vertices[i].pred = NULL;
-  }
+  const GraphView *view = VIEW(graph);
+  Vertex *vertices = calloc(view->vertRange, sizeof(Vertex));
 
-  Package pkg = {graphGetIter(graph), vertices, articulations, 0};
+  Package pkg = {graphIterFromView(view), vertices, articulations, 0};
   const GraphId root = pkg.iter->vertCurr;
   findArticulationStep(&pkg, root);
 
@@ -74,7 +70,7 @@ void graphFindArticulation(const Graph *const graph,
   graphIterResetEdge(pkg.iter, root);
   while (graphIterNextEdge(pkg.iter, root, &id, &to)) {
     if (vertices[to].pred == vertices && ++children == 2) {
-      graphPathInsert(articulations, 0);
+      graphLinkedInsert(articulations, 0);
       break;
     }
   }

@@ -6,10 +6,12 @@
 #define UNREACHABLE_BYTE 0x7f
 
 typedef struct {
+  GraphSize vertRange;
+  GraphId vertHead, *vertNext;
+
   GraphBool directed;
-  GraphSize vertRange, edgeRange;
-  GraphId vertHead, *edgeHead;
-  GraphId *vertNext, *edgeNext;
+  GraphSize edgeRange;
+  GraphId *edgeHead, *edgeNext;
   GraphEndpoint *endpts;
 } GraphView; // 最小图信息
 

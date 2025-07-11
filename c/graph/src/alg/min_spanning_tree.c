@@ -12,7 +12,7 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
   const GraphView *view = VIEW(graph);
   Heap heap;
   heapInit(&heap, graph->vertNum);
-  GraphIter *iter = graphGetIter(graph);
+  GraphIter *iter = graphIterFromView(view);
   GraphBool *visited = calloc(view->vertRange, sizeof(GraphBool));
   WeightType *minWeight = malloc(view->vertRange * sizeof(WeightType));
   memset(minWeight, UNREACHABLE_BYTE, view->vertRange * sizeof(WeightType));

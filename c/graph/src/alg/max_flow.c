@@ -5,34 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void reverse(const GraphView *const residual, const GraphId id,
-                    const GraphId from, const GraphId to) {
-  GraphId *predNext =
-      graphFind(residual->edgeNext, residual->edgeHead + from, id);
-  graphUnlink(residual->edgeNext, predNext);
-  graphInsertEdge(residual, to, id);
-}
-
-// 残余网络
-static void *residualNetworkInit(const GraphView *network,
-                                 GraphView *residual) {
-  const GraphSize vertRange = network->vertRange;
-  const GraphSize edgeRange = network->edgeRange;
-  residual->directed = network->directed;
-  residual->vertHead = network->vertHead;
-  residual->vertNext = network->vertNext;
-
-  const GraphSize edgeNextSize =
-      sizeof(GraphId) * (network->directed ? edgeRange : 2 * edgeRange);
-  void *buff = malloc(vertRange * sizeof(GraphId) + edgeNextSize);
-  residual->edgeHead = buff;
-  memcpy(residual->edgeHead, network->edgeHead,
-         network->edgeRange * sizeof(GraphId));
-
-  residual->edgeNext = buff + vertRange;
-  memcpy(residual->edgeNext, network->edgeNext, edgeNextSize);
-  return buff;
-}
+typedef struct {
+  GraphId src, sink;
+  GraphView *residual;
+  GraphIter *iter;
+  GraphId *pred;
+  const FlowType *cap;
+  FlowType *curr;
+  FlowType *flow;
+} Package;
 
 /*
  * 广度优先搜索寻找最短路径，
@@ -40,22 +21,20 @@ static void *residualNetworkInit(const GraphView *network,
  * 是因为这可能会导致capacity大的边被反复反转，
  * 不如最短路径收敛稳定 O(V * E^2)
  */
-static GraphBool bfs(GraphIter *iter, GraphQueue *const queue,
-                     GraphId predEdge[], GraphId predVert[],
-                     const GraphId source, const GraphId sink) {
-  GraphId id, to;
+static GraphBool bfs(const Package *pkg, GraphQueue *const queue) {
+  GraphId did, eid, to;
   graphQueueClear(queue);
-  graphQueuePush(queue, source);
+  graphQueuePush(queue, pkg->src);
   while (!graphQueueEmpty(queue)) {
     const GraphId from = graphQueuePop(queue);
 
-    while (graphIterNextEdge(iter, from, &id, &to)) {
-      if (predEdge[to] != INVALID_ID || to == source) continue;
+    while (graphIterNextDirect(pkg->iter, from, &did)) {
+      forward(pkg->residual, did, &eid, &to);
+      if (pkg->pred[to] != INVALID_ID || to == pkg->src) continue;
 
-      predEdge[to] = id;
-      predVert[id] = from;
+      pkg->pred[to] = did;
 
-      if (to == sink) return 1;
+      if (to == pkg->sink) return 1;
       graphQueuePush(queue, to);
     }
   }
@@ -63,64 +42,77 @@ static GraphBool bfs(GraphIter *iter, GraphQueue *const queue,
 }
 
 // 寻找路径可调整的flow = min(capacity - flow)
-static FlowType pathFlow(const GraphId predEdge[], const GraphId predVert[],
-                         const FlowType capacity[], const FlowType current[],
-                         const GraphId sink) {
+static FlowType pathFlow(const Package *pkg) {
   FlowType flow = UNREACHABLE;
-  for (GraphId edge = predEdge[sink]; edge != INVALID_ID;
-       edge = predEdge[predVert[edge]]) {
-    if (flow > capacity[edge] - current[edge]) {
-      flow = capacity[edge] - current[edge];
+  GraphId eid, from;
+  for (GraphId did = pkg->pred[pkg->sink]; did != INVALID_ID;
+       did = pkg->pred[from]) {
+    backward(pkg->residual, did, &eid, &from);
+    if (flow > pkg->cap[eid] - pkg->curr[eid]) {
+      flow = pkg->cap[eid] - pkg->curr[eid];
     }
   }
   return flow;
+}
+
+static void reverse(const GraphView *const residual, const GraphId did,
+                           const GraphId from, const GraphId to) {
+  GraphId *predNext =
+      graphFind(residual->edgeNext, residual->edgeHead + from, did);
+  graphUnlink(residual->edgeNext, predNext);
+  graphInsertEdge(residual, to, REVERSE(did));
+}
+
+static void update(const Package *pkg, const FlowType stepFlow) {
+  GraphId eid, from, to = pkg->sink;
+  for (GraphId did = pkg->pred[pkg->sink]; did != INVALID_ID;
+       did = pkg->pred[from]) {
+    backward(pkg->residual, did, &eid, &from);
+    pkg->curr[eid] += stepFlow;
+
+    // 如果edge是正向的，则flow的增加是同向的；否则相反
+    pkg->flow[eid] += did & 1 ? -stepFlow : stepFlow;
+
+    if (pkg->curr[eid] == pkg->cap[eid]) {
+      // 若残余网络的边的flow满容，则反转，
+      // 视作原网络边可释放的flow
+      pkg->curr[eid] = 0;
+      reverse(pkg->residual, did, from, to);
+    }
+    to = from;
+  }
 }
 
 FlowType EdmondsKarpMaxFlow(const Graph *network, const FlowType capacity[],
                             FlowType flow[], const GraphId source,
                             const GraphId sink) {
   const GraphView *view = VIEW(network);
-  GraphView residual;
-  void *buff = residualNetworkInit(view, &residual);
+  GraphView *residual = graphViewReserveEdge(view, GRAPH_TRUE);
+  graphViewCopyEdge(view, residual);
   GraphQueue *queue = graphNewQueue(network->vertNum);
-  GraphIter *iter = graphIterFromView(&residual);
-  GraphId *predEdge = malloc(view->edgeRange * sizeof(GraphId));
-  GraphId *predVert = malloc(view->vertRange * sizeof(GraphId));
-  GraphId *current = malloc(view->edgeRange * sizeof(FlowType));
-  memset(current, 0, view->edgeRange * sizeof(FlowType));
+  Package pkg = {source, sink, residual, graphIterFromView(residual)};
+  pkg.cap = capacity;
+  pkg.flow = flow;
+  pkg.pred = malloc(view->vertRange * sizeof(GraphId));
+  pkg.curr = malloc(view->edgeRange * sizeof(FlowType));
+  memset(pkg.curr, 0, view->edgeRange * sizeof(FlowType));
   memset(flow, 0, view->edgeRange * sizeof(FlowType));
 
   FlowType maxFlow = 0;
   while (1) {
-    memset(predEdge, INVALID_ID, view->vertRange * sizeof(GraphId));
-    if (!bfs(iter, queue, predEdge, predVert, source, sink)) break;
+    memset(pkg.pred, INVALID_ID, view->vertRange * sizeof(GraphId));
+    if (!bfs(&pkg, queue)) break;
+    graphIterResetEdge(pkg.iter, INVALID_ID);
 
-    const FlowType stepFlow =
-        pathFlow(predEdge, predVert, capacity, current, sink);
-    for (GraphId edge = predEdge[sink], from, to = sink; edge != INVALID_ID;
-         edge = predEdge[from]) {
-      from = predVert[edge];
-      current[edge] += stepFlow;
-
-      // 如果edge是正向的，则flow的增加是同向的；否则相反
-      flow[edge] += edge /**/ ? -stepFlow : stepFlow;
-
-      if (current[edge] == capacity[edge]) {
-        // 若残余网络的边的flow满容，则反转，
-        // 视作原网络边可释放的flow
-        current[edge] = 0;
-        reverse(&residual, edge, from, to);
-      }
-      to = from;
-    }
+    const FlowType stepFlow = pathFlow(&pkg);
+    update(&pkg, stepFlow);
     maxFlow += stepFlow;
   }
 
-  free(buff);
-  free(predEdge);
-  free(predVert);
-  free(current);
-  graphIterRelease(iter);
+  free(residual);
+  free(pkg.pred);
+  free(pkg.curr);
+  graphIterRelease(pkg.iter);
   graphQueueRelease(queue);
   return maxFlow;
 }

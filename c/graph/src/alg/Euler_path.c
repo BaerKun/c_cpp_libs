@@ -26,7 +26,7 @@ static GraphBool EulerPath_recursive(Package *pkg, GraphLinkedNode **const pred,
   GraphId id, to;
   while (1) {
     if (!getTargetEdge(pkg, from, &id, &to)) break;
-    GraphLinkedNode *const path = graphPathInsert(pred, id);
+    GraphLinkedNode *const path = graphLinkedInsert(pred, id);
     if (!EulerPath_recursive(pkg, &path->next, to)) return GRAPH_FALSE;
     pkg->dfsDst = from;
   }
@@ -60,7 +60,7 @@ static GraphBool EulerPath_stack(Package *pkg, GraphLinkedNode **const head,
       pkg->dfsDst = ptr->from;
       continue;
     }
-    GraphLinkedNode *const path = graphPathInsert(ptr->pred, id);
+    GraphLinkedNode *const path = graphLinkedInsert(ptr->pred, id);
 
     // 调用
     *++ptr = (Argument){&path->next, to};
@@ -84,7 +84,7 @@ void EulerPath(const Graph *const graph, GraphLinkedNode **const path,
     EulerPath_stack(&pkg, path, src, graph->edgeNum)
   ) {
     // clang-format on
-    graphPathClear(path);
+    graphLinkedClear(path);
   }
 
   free(pkg.visited);

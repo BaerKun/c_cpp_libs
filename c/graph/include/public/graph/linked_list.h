@@ -3,10 +3,10 @@
 
 #include "graph/type.h"
 
-GraphLinkedNode *graphPathInsert(GraphLinkedNode **predNextPtr, GraphId id);
+GraphLinkedNode *graphLinkedInsert(GraphLinkedNode **predNextPtr, GraphId id);
 
-GraphLinkedNode *graphPathUnlink(GraphLinkedNode **predNextPtr);
+GraphLinkedNode *graphLinkedUnlink(GraphLinkedNode **predNextPtr);
 
-void graphPathClear(GraphLinkedNode **path);
+void graphLinkedClear(GraphLinkedNode **path);
 
 #endif // GRAPH_LINKED_PATH_H

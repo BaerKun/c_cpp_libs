@@ -28,7 +28,7 @@ void graphIterCurr(const GraphIter *iter, GraphId *from, GraphId *eid,
   if (*from == INVALID_ID) return;
   *eid = iter->edgeCurr[*from];
   if (*eid == INVALID_ID) return;
-  parse(iter->view, *eid, eid, to);
+  forward(iter->view, *eid, eid, to);
 }
 
 GraphBool graphIterNextVert(GraphIter *iter, GraphId *vid) {
@@ -42,7 +42,7 @@ GraphBool graphIterNextEdge(GraphIter *iter, const GraphId from, GraphId *eid,
                             GraphId *to) {
   GraphId *curr = iter->edgeCurr + from;
   if (*curr == INVALID_ID) return GRAPH_FALSE;
-  parse(iter->view, *curr, eid, to);
+  forward(iter->view, *curr, eid, to);
   *curr = iter->view->edgeNext[*curr];
   return GRAPH_TRUE;
 }

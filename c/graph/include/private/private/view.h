@@ -5,8 +5,9 @@
 
 #define REVERSE(did) ((did) ^ 1)
 
-GraphId *graphViewCopy(const GraphView *view, GraphView *copy, GraphBool vert,
-                       GraphBool edge);
+GraphView *graphViewReserveEdge(const GraphView *view, GraphBool directed);
+
+void graphViewCopyEdge(const GraphView *view, const GraphView *copy);
 
 GraphId *graphFind(GraphId *next, GraphId *head, GraphId id);
 
@@ -34,14 +35,25 @@ static inline GraphBool graphIterNextDirect(GraphIter *iter, const GraphId from,
   return GRAPH_TRUE;
 }
 
-static inline void parse(const GraphView *view, const GraphId did, GraphId *eid,
-                         GraphId *to) {
+static inline void forward(const GraphView *view, const GraphId did,
+                           GraphId *eid, GraphId *to) {
   if (view->directed) {
     *eid = did;
     *to = view->endpts[did].to;
   } else {
     *eid = did >> 1;
     *to = ((GraphId *)view->endpts)[did];
+  }
+}
+
+static inline void backward(const GraphView *view, const GraphId did,
+                            GraphId *eid, GraphId *from) {
+  if (view->directed) {
+    *eid = did;
+    *from = view->endpts[did].from;
+  } else {
+    *eid = did >> 1;
+    *from = ((GraphId *)view->endpts)[REVERSE(did)];
   }
 }
 

@@ -1,7 +1,7 @@
 #include "graph/linked_list.h"
 #include <stdlib.h>
 
-GraphLinkedNode *graphPathInsert(GraphLinkedNode **predNextPtr,
+GraphLinkedNode *graphLinkedInsert(GraphLinkedNode **predNextPtr,
                                  const GraphId id) {
   GraphLinkedNode *const path = malloc(sizeof(GraphLinkedNode));
   path->id = id;
@@ -10,13 +10,13 @@ GraphLinkedNode *graphPathInsert(GraphLinkedNode **predNextPtr,
   return path;
 }
 
-GraphLinkedNode *graphPathUnlink(GraphLinkedNode **predNextPtr) {
+GraphLinkedNode *graphLinkedUnlink(GraphLinkedNode **predNextPtr) {
   GraphLinkedNode *const path = *predNextPtr;
   *predNextPtr = path->next;
   return path;
 }
 
-void graphPathClear(GraphLinkedNode **path) {
+void graphLinkedClear(GraphLinkedNode **path) {
   for (GraphLinkedNode *node = *path, *next; node; node = next) {
     next = node->next;
     free(node);
