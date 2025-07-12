@@ -11,6 +11,7 @@ void graphDestroy(const Graph *graph);
 GraphId graphAddVert(Graph *graph);
 GraphId graphAddEdge(Graph *graph, GraphId from, GraphId to,
                      GraphBool directed);
+void graphReserveVert(Graph *graph, GraphSize num);
 void graphDeleteVert(Graph *graph, GraphId id);
 void graphDeleteEdge(Graph *graph, GraphId id);
 

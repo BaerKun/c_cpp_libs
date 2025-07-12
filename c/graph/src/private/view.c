@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DID(eid) ((eid) == -1 ? -1 : (eid) << 1)
+
 GraphIter *graphIterFromView(const GraphView *view) {
   GraphIter *iter =
       malloc(sizeof(GraphIter) + view->vertRange * sizeof(GraphId));
@@ -19,7 +21,7 @@ GraphView *graphViewReserveEdge(const GraphView *view,
   GraphView *copy = buff;
   copy->vertRange = view->vertRange;
   copy->vertHead = view->vertHead;
-  copy->vertNext = copy->vertNext;
+  copy->vertNext = view->vertNext;
 
   copy->directed = directed;
   copy->edgeRange = view->edgeRange;
@@ -30,14 +32,23 @@ GraphView *graphViewReserveEdge(const GraphView *view,
 }
 
 void graphViewCopyEdge(const GraphView *view, const GraphView *copy) {
-  memcpy(copy->edgeHead, view->edgeHead, view->vertRange * sizeof(GraphId));
-  if (view->directed == copy->directed) {
+  switch (view->directed << 1 | copy->directed) {
+  case 3:
+    memcpy(copy->edgeHead, view->edgeHead, copy->vertRange * sizeof(GraphId));
+    memcpy(copy->edgeNext, view->edgeNext, copy->edgeRange * sizeof(GraphId));
+    break;
+  case 0:
+    memcpy(copy->edgeHead, view->edgeHead, copy->vertRange * sizeof(GraphId));
     memcpy(copy->edgeNext, view->edgeNext,
-           (copy->directed ? 1 : 2) * view->vertRange * sizeof(GraphId));
-  } else {
-    for (GraphSize i = 0; i < copy->vertRange; i++) {
-      copy->edgeNext[i << 1] = view->edgeNext[i] << 1 | view->edgeNext[i] < 0;
-    }
+           2 * copy->edgeRange * sizeof(GraphId));
+    break;
+  case 2:
+    for (GraphSize i = 0; i < copy->vertRange; ++i)
+      copy->edgeHead[i] = DID(view->edgeHead[i]);
+    for (GraphSize i = 0; i < copy->edgeRange; ++i)
+      copy->edgeNext[i << 1] = DID(view->edgeNext[i]);
+    break;
+  default:;
   }
 }
 

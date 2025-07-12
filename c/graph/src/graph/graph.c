@@ -27,6 +27,16 @@ GraphId graphAddVert(Graph *const graph) {
   return graphManagerNewVert(&graph->manager);
 }
 
+void graphReserveVert(Graph *graph, const GraphSize num){
+  graph->vertNum += num;
+  if (graph->vertNum > graph->vertCap) {
+    // realloc
+  }
+  for (GraphSize i = 0; i != num; ++i) {
+    graphManagerNewVert(&graph->manager);
+  }
+}
+
 GraphId graphAddEdge(Graph *const graph, const GraphId from, const GraphId to,
                      const GraphBool directed) {
   if (graph->edgeNum++ == graph->edgeCap) {
