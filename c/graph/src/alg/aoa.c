@@ -56,7 +56,7 @@ static void init(Package *pkg, const GraphView *view,
   pkg->indegree = malloc(vertRange * sizeof(GraphInt));
   memcpy(pkg->indegree, indegree, vertRange * sizeof(GraphInt));
   memset(pkg->earlyStart, 0, vertRange * sizeof(TimeType));
-  memset(pkg->lateStart, UNREACHABLE, vertRange * sizeof(TimeType));
+  memset(pkg->lateStart, UNREACHABLE_BYTE, vertRange * sizeof(TimeType));
   memset(pkg->successor, INVALID_ID, vertRange * sizeof(GraphId));
 }
 

@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "graph/alg.h"
 #include "graph/graph.h"
 #include "graph/iter.h"
-#include "graph/alg.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int testIter() {
   Graph *graph = malloc(graphGetGraphSize());

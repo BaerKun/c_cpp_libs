@@ -1,35 +1,30 @@
-#include "private/graph_detail.h"
 #include "graph/iter.h"
+#include "private/graph_detail.h"
+#include "private/heap.h"
 #include <stdlib.h>
 #include <string.h>
-
-#define HEAP_ELEM_TYPE WeightType *
-#define HEAP_LESS_THAN(a, b) (*a < *b)
-#include "heap.h"
 
 void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
                          GraphId predecessor[], const GraphId root) {
   const GraphView *view = VIEW(graph);
-  Heap heap;
-  heapInit(&heap, graph->vertNum);
   GraphIter *iter = graphIterFromView(view);
   GraphBool *visited = calloc(view->vertRange, sizeof(GraphBool));
   WeightType *minWeight = malloc(view->vertRange * sizeof(WeightType));
+  GraphHeap *heap = graphHeapCreate(graph->vertNum, minWeight);
   memset(minWeight, UNREACHABLE_BYTE, view->vertRange * sizeof(WeightType));
 
   GraphId id, to;
   predecessor[root] = INVALID_ID;
-  heapPush(&heap, minWeight + root);
-  while (heap.size) {
-    const GraphId from = (GraphId)(*heapTop(&heap) - minWeight);
-    heapPop(&heap);
-    visited[from] = 1;
+  graphHeapPush(heap, root);
+  while (!graphHeapEmpty(heap)) {
+    const GraphId from = graphHeapPop(heap);
+    visited[from] = GRAPH_TRUE;
 
     while (graphIterNextEdge(iter, from, &id, &to)) {
       if (!visited[to] && minWeight[to] > weight[id]) {
         minWeight[to] = weight[id];
         predecessor[to] = from;
-        heapPush(&heap, minWeight + to);
+        graphHeapPush(heap, to);
       }
     }
   }
@@ -37,43 +32,33 @@ void PrimMinSpanningTree(const Graph *graph, const WeightType weight[],
   free(visited);
   free(minWeight);
   graphIterRelease(iter);
-  heapFreeData(&heap);
+  graphHeapRelease(heap);
 }
 
-#include "disjoint_set.h"
+#include "private/disjoint_set.h"
 
-void KruskalMinSpanningTree(const GraphEndpoint *set,
-                            const WeightType weight[], const GraphSize edgeNum,
-                            const GraphSize vertNum, GraphId *tree) {
-  Heap heap;
-  const WeightType **heapBuff = malloc(edgeNum * sizeof(WeightType *));
-  for (int i = 0; i < edgeNum; ++i) {
-    heapBuff[i] = weight + i;
-  }
-  buildHeap(&heap, heapBuff, edgeNum);
+void KruskalMinSpanningTree(const GraphEndpoint *set, const WeightType weight[],
+                            const GraphSize edgeNum, const GraphSize vertNum,
+                            GraphId *tree) {
+  GraphHeap *heap = graphHeapBuild(edgeNum, weight);
+  GraphDisjointSet *disjointSet = graphDisjointCreate(vertNum);
 
-  int *disjointSet = malloc(vertNum * sizeof(int));
-  disjointSetInit(disjointSet, vertNum);
-
-  int counter = 0;
-  while (heap.size != 0) {
-    const WeightType *w = *heapTop(&heap);
-    heapPop(&heap);
-
-    const GraphId id = w - weight;
+  GraphSize counter = 0;
+  while (!graphHeapEmpty(heap)) {
+    const GraphId id = graphHeapPop(heap);
     const GraphEndpoint *edge = set + id;
-    const int root1 = disjointSetFind(disjointSet, edge->from);
-    const int root2 = disjointSetFind(disjointSet, edge->to);
+    const GraphId cls1 = graphDisjointFind(disjointSet, edge->to);
+    const GraphId cls2 = graphDisjointFind(disjointSet, edge->from);
 
-    if (root1 != root2) {
+    if (cls1 != cls2) {
       tree[counter++] = id;
-      disjointSetUnion(disjointSet, root1, root2);
+      graphDisjointUnion(disjointSet, cls1, cls2);
     }
   }
   if (counter + 1 != vertNum) {
     // No spanning tree
   }
 
-  free(heapBuff);
-  free(disjointSet);
+  graphHeapRelease(heap);
+  graphDisjointRelease(disjointSet);
 }

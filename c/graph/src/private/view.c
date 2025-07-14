@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DID(eid) ((eid) == -1 ? -1 : (eid) << 1)
+#define DID(eid) ((eid) << 1 | (eid) >> (sizeof(GraphId) * 8 - 1))
 
 GraphIter *graphIterFromView(const GraphView *view) {
   GraphIter *iter =
