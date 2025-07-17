@@ -49,7 +49,10 @@ GraphId graphHeapPop(GraphHeap *heap) {
 GraphHeap *graphHeapBuild(const GraphSize capacity, const WeightType *weight) {
   GraphHeap *heap = graphHeapCreate(capacity, weight);
   heap->size = capacity;
-  for (GraphId i = 0; i != capacity; ++i) heap->data[i + 1] = i;
+
+  GraphId *init = heap->data + 1;
+  for (GraphId i = 0; i != capacity; ++i) init[i] = i;
+
   for (uint64_t i = capacity >> 1; i; --i) graphHeapPercolateDown(heap, i);
   return heap;
 }

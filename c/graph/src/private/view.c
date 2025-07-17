@@ -15,17 +15,17 @@ GraphIter *graphIterFromView(const GraphView *view) {
 
 GraphView *graphViewReserveEdge(const GraphView *view,
                                 const GraphBool directed) {
-  void *buff = malloc(sizeof(GraphView) +
-                      (view->vertRange + (directed ? 1 : 2) * view->edgeRange) *
-                          sizeof(GraphId));
-  GraphView *copy = buff;
+  char *const buff = malloc(sizeof(GraphView) +
+                            (view->vertRange + (view->edgeRange << !directed)) *
+                                sizeof(GraphId));
+  GraphView *copy = (GraphView *)buff;
   copy->vertRange = view->vertRange;
   copy->vertHead = view->vertHead;
   copy->vertNext = view->vertNext;
 
   copy->directed = directed;
   copy->edgeRange = view->edgeRange;
-  copy->edgeHead = buff + sizeof(GraphView);
+  copy->edgeHead = (GraphId *)(buff + sizeof(GraphView));
   copy->edgeNext = copy->edgeHead + view->vertRange;
   copy->endpts = view->endpts;
   return copy;

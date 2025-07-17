@@ -33,8 +33,7 @@ int testIter() {
 }
 
 int testMaxFlow() {
-  char buff[graphGetGraphSize()];
-  Graph *graph = (Graph *)buff;
+  Graph *graph = malloc(graphGetGraphSize());
   graphInit(graph, GRAPH_TRUE, 10, 15);
   graphReserveVert(graph, 6);
 
