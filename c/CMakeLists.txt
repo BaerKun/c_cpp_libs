@@ -7,11 +7,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 include_directories(utils ../share)
 add_subdirectory(utils)
-add_subdirectory(tree)
 add_subdirectory(arithmetic)
 add_subdirectory(misc)
 add_subdirectory(geometry)
-add_subdirectory(somefun)
 
 # test
 #add_subdirectory(_test)
